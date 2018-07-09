@@ -208,7 +208,7 @@ bool AddKeyValueToMap(std::map<std::string, std::string>* map,
   }
   return true;
 }
-
+#if defined(OS_WIN) || defined(OS_FUCHSIA)
 // Overloaded version, to accept base::FilePath as a VALUE.
 bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
                       const std::string& key_value,
@@ -233,7 +233,7 @@ bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
   }
   return true;
 }
-
+#endif
 // Calls Metrics::HandlerLifetimeMilestone, but only on the first call. This is
 // to prevent multiple exit events from inadvertently being recorded, which
 // might happen if a crash occurs during destruction in what would otherwise be
@@ -772,12 +772,14 @@ int HandlerMain(int argc,
         options.url = optarg;
         break;
       }
+#if defined(OS_WIN) || defined(OS_FUCHSIA)
       case kOptionAttachment: {
         if (!AddKeyValueToMap(&options.attachments, optarg, "--attachment")) {
           return ExitFailure();
         }
         break;
       }
+#endif
       case kOptionHelp: {
         Usage(me);
         MetricsRecordExit(Metrics::LifetimeMilestone::kExitedEarly);

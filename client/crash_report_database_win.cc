@@ -930,59 +930,59 @@ std::unique_ptr<Metadata> CrashReportDatabaseWin::AcquireMetadata() {
 
 void CrashReportDatabaseWin::CleanOrphanedAttachments()
 {
-    base::FilePath root_attachments_dir(base_dir_.Append(kAttachmentsDirectory));
-    DirectoryReader reader;
-    if (!reader.Open(root_attachments_dir)) {
-      LOG(ERROR) << "no attachments dir";
+  base::FilePath root_attachments_dir(base_dir_.Append(kAttachmentsDirectory));
+  DirectoryReader reader;
+  if (!reader.Open(root_attachments_dir)) {
+    LOG(ERROR) << "no attachments dir";
+    return;
+  }
+
+  std::unique_ptr<Metadata> metadata(AcquireMetadata());
+  if (!metadata)
       return;
-    }
 
-    std::unique_ptr<Metadata> metadata(AcquireMetadata());
-    if (!metadata)
-        return;
-
-    base::FilePath filename;
-    DirectoryReader::Result result;
-    while ((result = reader.NextFile(&filename)) ==
-           DirectoryReader::Result::kSuccess) {
-      const base::FilePath path(root_attachments_dir.Append(filename));
-      if (IsDirectory(path, false)) {
-        UUID uuid;
-        if (!uuid.InitializeFromString(filename.value())) {
-          LOG(ERROR) << "unexpected attachment dir name " << base::UTF16ToUTF8(filename.value());
-          continue;
-        }
-
-        // Check to see if the report exist.
-        const ReportDisk* report_disk;
-        const OperationStatus os = metadata->FindSingleReport(uuid, &report_disk);
-        if (os != OperationStatus::kReportNotFound) {
-          continue;
-        }
-
-        // Couldn't find a report, assume these attachments are orphaned.
-        RemoveAttachmentsByUUID(uuid);
+  base::FilePath filename;
+  DirectoryReader::Result result;
+  while ((result = reader.NextFile(&filename)) ==
+         DirectoryReader::Result::kSuccess) {
+    const base::FilePath path(root_attachments_dir.Append(filename));
+    if (IsDirectory(path, false)) {
+      UUID uuid;
+      if (!uuid.InitializeFromString(filename.value())) {
+        LOG(ERROR) << "unexpected attachment dir name " << base::UTF16ToUTF8(filename.value());
+        continue;
       }
+
+      // Check to see if the report exist.
+      const ReportDisk* report_disk;
+      const OperationStatus os = metadata->FindSingleReport(uuid, &report_disk);
+      if (os != OperationStatus::kReportNotFound) {
+        continue;
+      }
+
+      // Couldn't find a report, assume these attachments are orphaned.
+      RemoveAttachmentsByUUID(uuid);
     }
+  }
 }
 
 void CrashReportDatabaseWin::RemoveAttachmentsByUUID(const UUID &uuid)
 {
-    base::FilePath attachments_dir = AttachmentsPath(uuid);
-    DirectoryReader reader;
-    if (!reader.Open(attachments_dir)) {
-      return;
-    }
+  base::FilePath attachments_dir = AttachmentsPath(uuid);
+  DirectoryReader reader;
+  if (!reader.Open(attachments_dir)) {
+    return;
+  }
 
-    base::FilePath filename;
-    DirectoryReader::Result result;
-    while ((result = reader.NextFile(&filename)) ==
-           DirectoryReader::Result::kSuccess) {
-      const base::FilePath filepath(attachments_dir.Append(filename));
-      LoggingRemoveFile(filepath);
-    }
+  base::FilePath filename;
+  DirectoryReader::Result result;
+  while ((result = reader.NextFile(&filename)) ==
+         DirectoryReader::Result::kSuccess) {
+    const base::FilePath filepath(attachments_dir.Append(filename));
+    LoggingRemoveFile(filepath);
+  }
 
-    LoggingRemoveDirectory(attachments_dir);
+  LoggingRemoveDirectory(attachments_dir);
 }
 
 std::unique_ptr<CrashReportDatabase> InitializeInternal(

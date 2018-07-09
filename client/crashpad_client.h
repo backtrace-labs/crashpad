@@ -308,6 +308,12 @@ class CrashpadClient {
   //!     error message will have been logged.
   bool WaitForHandlerStart(unsigned int timeout_ms);
 
+   //! \brief Requests that the handler capture a dump even though there hasn't
+  //!     been a crash.
+  //!
+  //! \param[in] pointer A `EXCEPTION_POINTERS`to current exception received in application 
+  static void DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer);
+  
   //! \brief Requests that the handler capture a dump even though there hasn't
   //!     been a crash.
   //!

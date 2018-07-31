@@ -715,6 +715,51 @@ bool CrashpadClient::WaitForHandlerStart(unsigned int timeout_ms) {
   return exit_code == 0;
 }
 
+
+void CrashpadClient::DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer)
+{	
+  if (g_signal_non_crash_dump == INVALID_HANDLE_VALUE ||
+      g_non_crash_dump_done == INVALID_HANDLE_VALUE) {
+    LOG(ERROR) << "not connected";
+    return;
+  }
+
+  if (BlockUntilHandlerStartedOrFailed() == StartupState::kFailed) {
+    // If we know for certain that the handler has failed to start, then abort
+    // here, as we would otherwise wait indefinitely for the
+    // g_non_crash_dump_done event that would never be signalled.
+    LOG(ERROR) << "crash server failed to launch, no dump captured";
+    return;
+  }
+
+  // In the non-crashing case, we aren't concerned about avoiding calls into
+  // Win32 APIs, so just use regular locking here in case of multiple threads
+  // calling this function. If a crash occurs while we're in here, the worst
+  // that can happen is that the server captures a partial dump for this path
+  // because another thread’s crash processing finished and the process was
+  // terminated before this thread’s non-crash processing could be completed.
+  base::AutoLock lock(*g_non_crash_dump_lock);
+
+  // Create a fake EXCEPTION_POINTERS to give the handler something to work
+  // with.
+  EXCEPTION_POINTERS exception_pointers = *pointer;
+
+  // This is logically const, but EXCEPTION_POINTERS does not declare it as
+  // const, so we have to cast that away from the argument.
+  //exception_pointers.ContextRecord = const_cast<CONTEXT*>(&context);
+
+  //In this case we don't want to mock fake EXCEPTION_POINTER. 
+  g_non_crash_exception_information.thread_id = GetCurrentThreadId();
+  g_non_crash_exception_information.exception_pointers =
+      FromPointerCast<WinVMAddress>(&exception_pointers);
+
+  bool set_event_result = !!SetEvent(g_signal_non_crash_dump);
+  PLOG_IF(ERROR, !set_event_result) << "SetEvent";
+
+  DWORD wfso_result = WaitForSingleObject(g_non_crash_dump_done, INFINITE);
+  PLOG_IF(ERROR, wfso_result != WAIT_OBJECT_0) << "WaitForSingleObject";
+}
+
 // static
 void CrashpadClient::DumpWithoutCrash(const CONTEXT& context) {
   if (g_signal_non_crash_dump == INVALID_HANDLE_VALUE ||

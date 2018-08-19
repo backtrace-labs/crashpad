@@ -175,9 +175,8 @@ bool CrashpadClient::StartHandlerAtCrash(
     const std::string& url,
     const std::map<std::string, std::string>& annotations,
     const std::vector<std::string>& arguments) {
-  std::vector<std::string> argv;
-  BuildHandlerArgvStrings(
-      handler, database, metrics_dir, url, annotations, arguments, &argv);
+  std::vector<std::string> argv = BuildHandlerArgvStrings(
+      handler, database, metrics_dir, url, annotations, arguments);
 
   auto signal_handler = LaunchAtCrashHandler::Get();
   if (signal_handler->Initialize(&argv)) {
@@ -197,11 +196,10 @@ bool CrashpadClient::StartHandlerForClient(
     const std::map<std::string, std::string>& annotations,
     const std::vector<std::string>& arguments,
     int socket) {
-  std::vector<std::string> argv;
-  BuildHandlerArgvStrings(
-      handler, database, metrics_dir, url, annotations, arguments, &argv);
+  std::vector<std::string> argv = BuildHandlerArgvStrings(
+      handler, database, metrics_dir, url, annotations, arguments);
 
-  argv.push_back(FormatArgumentInt("initial-client", socket));
+  argv.push_back(FormatArgumentInt("initial-client-fd", socket));
 
   return DoubleForkAndExec(argv, socket, true, nullptr);
 }

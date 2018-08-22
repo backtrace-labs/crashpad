@@ -45,6 +45,18 @@ class CrashpadClient {
   CrashpadClient();
   ~CrashpadClient();
 
+#if defined(OS_WIN)
+  bool StartHandlerForBacktrace(const base::FilePath& handler,
+                                const base::FilePath& database,
+                                const base::FilePath& metrics_dir,
+                                const std::string& url,
+                                const std::map<std::string, std::string>& annotations,
+                                const std::vector<std::string>& arguments,
+                                const std::map<std::string, std::string>& fileAttachments,
+                                bool restartable,
+                                bool asynchronous_start);
+#endif
+
   //! \brief Starts a Crashpad handler process, performing any necessary
   //!     handshake to configure it.
   //!

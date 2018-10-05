@@ -36,6 +36,7 @@
 #include "util/win/registration_protocol_win.h"
 #include "util/win/safe_terminate_process.h"
 #include "util/win/xp_compat.h"
+#include "util/roblox/user_callback_functions.h"
 
 namespace crashpad {
 
@@ -537,6 +538,7 @@ DWORD __stdcall ExceptionHandlerServer::PipeServiceProc(void* ctx) {
 
 // static
 void __stdcall ExceptionHandlerServer::OnCrashDumpEvent(void* ctx, BOOLEAN) {
+  RunUserCallbackOnDumpEvent(nullptr);
   // This function is executed on the thread pool.
   internal::ClientData* client = reinterpret_cast<internal::ClientData*>(ctx);
   base::AutoLock lock(*client->lock());
@@ -552,6 +554,7 @@ void __stdcall ExceptionHandlerServer::OnCrashDumpEvent(void* ctx, BOOLEAN) {
 
 // static
 void __stdcall ExceptionHandlerServer::OnNonCrashDumpEvent(void* ctx, BOOLEAN) {
+  RunUserCallbackOnDumpEvent(nullptr);
   // This function is executed on the thread pool.
   internal::ClientData* client = reinterpret_cast<internal::ClientData*>(ctx);
   base::AutoLock lock(*client->lock());

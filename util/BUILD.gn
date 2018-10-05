@@ -158,6 +158,8 @@ static_library("util") {
     "thread/thread_log_messages.h",
     "thread/worker_thread.cc",
     "thread/worker_thread.h",
+    "roblox/user_callback_functions.cc",
+    "roblox/user_callback_functions.h",
   ]
 
   if (crashpad_is_posix || crashpad_is_fuchsia) {

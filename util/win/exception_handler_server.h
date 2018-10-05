@@ -97,7 +97,8 @@ class ExceptionHandlerServer {
   //!     client. Ownership of these handles is taken.
   //! \param[in] delegate The interface to which the exceptions are delegated
   //!     when they are caught in Run(). Ownership is not transferred.
-  void InitializeWithInheritedDataForInitialClient(
+  //! \return true if the initialization succeeds.
+  bool InitializeWithInheritedDataForInitialClient(
       const InitialClientData& initial_client_data,
       Delegate* delegate);
 

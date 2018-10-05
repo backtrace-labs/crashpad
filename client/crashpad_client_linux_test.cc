@@ -45,7 +45,7 @@ namespace crashpad {
 namespace test {
 namespace {
 
-bool HandleCrashSuccessfully(int, siginfo_t*, ucontext_t*) {
+bool HandleCrashSuccessfully(int, siginfo_t*, void*) {
   return true;
 }
 

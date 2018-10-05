@@ -103,7 +103,7 @@ class Annotation {
     // variables defined in a constexpr function, which is valid. Avoid them
     // and the also-problematic DCHECK until all the infrastructure is updated:
     // https://crbug.com/crashpad/201.
-#if !defined(OS_WIN) || (defined(_MSC_VER) && _MSC_VER >= 1910)
+#if (__cpp_constexpr >= 201304) || (defined(_MSC_VER) && _MSC_VER >= 1910)
     const UnderlyingType start =
         static_cast<UnderlyingType>(Type::kUserDefinedStart);
     const UnderlyingType user_type = start + value;

@@ -5,6 +5,7 @@
 *.xcodeproj
 *~
 .*.sw?
+.vscode
 .DS_Store
 .gdb_history
 .gdbinit

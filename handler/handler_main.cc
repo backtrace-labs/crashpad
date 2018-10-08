@@ -144,6 +144,8 @@ void Usage(const base::FilePath& me) {
 #if defined(OS_LINUX) || defined(OS_ANDROID)
 "      --trace-parent-with-exception=EXCEPTION_INFORMATION_ADDRESS\n"
 "                              request a dump for the handler's parent process\n"
+"      --trace-parent-pid=pid\n"
+"                              Override --trace-parent-with-exception to apply to a different pid, for testing\n"
 "      --initial-client-fd=FD  a socket connected to a client.\n"
 "      --sanitization_information=SANITIZATION_INFORMATION_ADDRESS\n"
 "                              the address of a SanitizationInformation struct.\n"
@@ -174,6 +176,7 @@ struct Options {
 #elif defined(OS_LINUX) || defined(OS_ANDROID)
   VMAddress exception_information_address;
   int initial_client_fd;
+  int parent_pid;
   VMAddress sanitization_information_address;
 #elif defined(OS_WIN)
   std::string pipe_name;
@@ -569,6 +572,7 @@ int HandlerMain(int argc,
     kOptionTraceParentWithException,
     kOptionInitialClientFD,
     kOptionSanitizationInformation,
+    kOptionTraceParentPid,
 #endif
     kOptionURL,
 #if defined(OS_WIN) || defined(OS_FUCHSIA)
@@ -630,6 +634,10 @@ int HandlerMain(int argc,
      required_argument,
      nullptr,
      kOptionSanitizationInformation},
+    {"trace-parent-pid",
+     required_argument,
+     nullptr,
+     kOptionTraceParentPid},
 #endif  // OS_LINUX || OS_ANDROID
     {"url", required_argument, nullptr, kOptionURL},
 #if defined(OS_WIN) || defined(OS_FUCHSIA)
@@ -652,6 +660,7 @@ int HandlerMain(int argc,
   options.exception_information_address = 0;
   options.initial_client_fd = kInvalidFileHandle;
   options.sanitization_information_address = 0;
+  options.parent_pid = getppid();
 #endif
 
   int opt;
@@ -747,6 +756,14 @@ int HandlerMain(int argc,
         if (!StringToNumber(optarg, &options.exception_information_address)) {
           ToolSupport::UsageHint(
               me, "failed to parse --trace-parent-with-exception");
+          return ExitFailure();
+        }
+        break;
+      }
+      case kOptionTraceParentPid: {
+        if (!StringToNumber(optarg, &options.parent_pid)) {
+          ToolSupport::UsageHint(
+              me, "failed to parse --trace-parent-pid");
           return ExitFailure();
         }
         break;
@@ -915,7 +932,7 @@ int HandlerMain(int argc,
     info.exception_information_address = options.exception_information_address;
     info.sanitization_information_address =
         options.sanitization_information_address;
-    return exception_handler.HandleException(getppid(), info) ? EXIT_SUCCESS
+    return exception_handler.HandleException(options.parent_pid, info) ? EXIT_SUCCESS
                                                               : ExitFailure();
   }
 #endif  // OS_LINUX || OS_ANDROID

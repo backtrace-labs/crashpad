@@ -152,7 +152,7 @@ void Usage(const base::FilePath& me) {
 #endif  // OS_LINUX || OS_ANDROID
 "      --url=URL               send crash reports to this Breakpad server URL,\n"
 "                              only if uploads are enabled for the database\n"
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
 "      --attachment=NAME=PATH  attach a copy of a file, along with a crash dump\n"
 #endif
 "      --help                  display this help and exit\n"
@@ -211,7 +211,7 @@ bool AddKeyValueToMap(std::map<std::string, std::string>* map,
   }
   return true;
 }
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
 // Overloaded version, to accept base::FilePath as a VALUE.
 bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
                       const std::string& key_value,
@@ -575,7 +575,7 @@ int HandlerMain(int argc,
     kOptionTraceParentPid,
 #endif
     kOptionURL,
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX)
     kOptionAttachment,
 #endif
     // Standard options.
@@ -640,7 +640,7 @@ int HandlerMain(int argc,
      kOptionTraceParentPid},
 #endif  // OS_LINUX || OS_ANDROID
     {"url", required_argument, nullptr, kOptionURL},
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX)
     {"attachment", required_argument, nullptr, kOptionAttachment},
 #endif
     {"help", no_argument, nullptr, kOptionHelp},
@@ -789,7 +789,7 @@ int HandlerMain(int argc,
         options.url = optarg;
         break;
       }
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
       case kOptionAttachment: {
         if (!AddKeyValueToMap(&options.attachments, optarg, "--attachment")) {
           return ExitFailure();
@@ -920,7 +920,7 @@ int HandlerMain(int argc,
       database.get(),
       static_cast<CrashReportUploadThread*>(upload_thread.Get()),
       &options.annotations,
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
       // TODO(scottmg): for all platforms.
       &options.attachments,
 #endif

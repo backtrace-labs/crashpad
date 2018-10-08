@@ -319,4 +319,33 @@ void CrashpadClient::SetFirstChanceExceptionHandler(
   g_crash_handler->SetFirstChanceHandler(handler);
 }
 
+// static
+bool CrashpadClient::StartHandlerAtCrashForBacktrace(
+    const base::FilePath& handler,
+    const base::FilePath& database,
+    const base::FilePath& metrics_dir,
+    const std::string& url,
+    const std::map<std::string, std::string>& annotations,
+    const std::vector<std::string>& arguments,
+    const std::map<std::string, std::string>& fileAttachments) 
+    {
+  
+  std::vector<std::string> argv = BuildHandlerArgvStrings(
+      handler, database, metrics_dir, url, annotations, arguments);
+
+  for(const auto& fa : fileAttachments) {
+    std::stringstream str;
+    str << "--attachment=attachment_" << fa.first << "=" << fa.second;
+    argv.push_back(str.str());
+  }
+
+  auto signal_handler = LaunchAtCrashHandler::Get();
+  if (signal_handler->Initialize(&argv, nullptr)) {
+    DCHECK(!g_crash_handler);
+    g_crash_handler = signal_handler;
+    return true;
+  }
+  return false;
+}
+
 }  // namespace crashpad

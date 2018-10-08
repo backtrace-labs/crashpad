@@ -305,6 +305,15 @@ class CrashpadClient {
   //! \param[in] handler The custom crash signal handler to install.
   static void SetFirstChanceExceptionHandler(FirstChanceHandler handler);
 
+  static bool StartHandlerAtCrashForBacktrace(
+      const base::FilePath& handler,
+      const base::FilePath& database,
+      const base::FilePath& metrics_dir,
+      const std::string& url,
+      const std::map<std::string, std::string>& annotations,
+      const std::vector<std::string>& arguments,
+      const std::map<std::string, std::string>& fileAttachments
+      );
 #endif  // OS_LINUX || OS_ANDROID || DOXYGEN
 
 #if defined(OS_MACOSX) || DOXYGEN

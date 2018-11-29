@@ -1036,8 +1036,10 @@ int HandlerMain(int argc,
 
 #if defined(OS_WIN)
   if (options.initial_client_data.IsValid()) {
-    exception_handler_server.InitializeWithInheritedDataForInitialClient(
-        options.initial_client_data, &exception_handler);
+    if (!exception_handler_server.InitializeWithInheritedDataForInitialClient(
+        options.initial_client_data, &exception_handler)) {
+      return EXIT_FAILURE;
+    }
   }
 #elif defined(OS_LINUX) || defined(OS_ANDROID)
   if (options.initial_client_fd == kInvalidFileHandle ||

@@ -262,9 +262,18 @@ void ExceptionHandlerServer::SetPipeName(const std::wstring& pipe_name) {
   pipe_name_ = pipe_name;
 }
 
-void ExceptionHandlerServer::InitializeWithInheritedDataForInitialClient(
+bool ExceptionHandlerServer::InitializeWithInheritedDataForInitialClient(
     const InitialClientData& initial_client_data,
     Delegate* delegate) {
+  /* Load the GetFileInformationByHandleEx function, bail out on Windows XP */
+  typedef BOOL (WINAPI *GetFileInfoFunc) (
+    HANDLE, FILE_INFO_BY_HANDLE_CLASS, LPVOID, DWORD);
+  GetFileInfoFunc func = (GetFileInfoFunc) GetProcAddress(
+    GetModuleHandleA("kernel32.dll"), "GetFileInformationByHandleEx");
+  if (!func) {
+    return false;
+  }
+
   DCHECK(pipe_name_.empty());
   DCHECK(!first_pipe_instance_.is_valid());
 
@@ -273,11 +282,13 @@ void ExceptionHandlerServer::InitializeWithInheritedDataForInitialClient(
   // TODO(scottmg): Vista+. Might need to pass through or possibly find an Nt*.
   size_t bytes = sizeof(wchar_t) * _MAX_PATH + sizeof(FILE_NAME_INFO);
   std::unique_ptr<uint8_t[]> data(new uint8_t[bytes]);
-  if (!GetFileInformationByHandleEx(first_pipe_instance_.get(),
-                                    FileNameInfo,
-                                    data.get(),
-                                    static_cast<DWORD>(bytes))) {
+
+  if (!func(first_pipe_instance_.get(),
+            FileNameInfo,
+            data.get(),
+            static_cast<DWORD>(bytes))) {
     PLOG(FATAL) << "GetFileInformationByHandleEx";
+    return false;
   }
   FILE_NAME_INFO* file_name_info =
       reinterpret_cast<FILE_NAME_INFO*>(data.get());
@@ -303,6 +314,7 @@ void ExceptionHandlerServer::InitializeWithInheritedDataForInitialClient(
         &OnProcessEnd);
     clients_.insert(client);
   }
+  return true;
 }
 
 void ExceptionHandlerServer::Run(Delegate* delegate) {

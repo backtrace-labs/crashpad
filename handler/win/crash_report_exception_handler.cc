@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "handler/minidump_to_upload_parameters.h"
 #include "handler/win/crash_report_exception_handler.h"
 
 #include <type_traits>
@@ -124,7 +125,8 @@ unsigned int CrashReportExceptionHandler::ExceptionHandlerServerException(
         FileWriter* writer = new_report->AddAttachment(it.first);
         if (writer) {
           std::string contents;
-          if (!LoggingReadEntireFile(it.second, &contents)) {
+          int64_t nBytes = CrashpadUploadAttachmentFileSizeLimit();
+          if (!LoggingReadLastPartOfFile(it.second, &contents, (FileOffset)nBytes)) {
             // Not being able to read the file isn't considered fatal, and
             // should not prevent the report from being processed.
             continue;

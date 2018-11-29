@@ -25,6 +25,7 @@
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/strings/string_number_conversions.h"
 #include "build/build_config.h"
 #include "client/settings.h"
 #include "handler/minidump_to_upload_parameters.h"
@@ -58,7 +59,8 @@ CrashReportUploadThread::CrashReportUploadThread(CrashReportDatabase* database,
                                             : WorkerThread::kIndefiniteWait,
               this),
       known_pending_report_uuids_(),
-      database_(database) {
+      database_(database), rd_((unsigned)time(0)), dist_(1,100)
+{
   DCHECK(!url_.empty());
 }
 
@@ -66,6 +68,11 @@ CrashReportUploadThread::~CrashReportUploadThread() {
 }
 
 void CrashReportUploadThread::ReportPending(const UUID& report_uuid) {
+  if (((int)dist_(rd_)) > CrashpadUploadPercentage()) {
+    database_->SkipReportUpload(report_uuid,
+                                Metrics::CrashSkippedReason::kUploadThrottled);
+    return;
+  }
   known_pending_report_uuids_.PushBack(report_uuid);
   thread_.DoWorkNow();
 }

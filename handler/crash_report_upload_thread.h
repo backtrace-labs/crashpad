@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <random>
 
 #include "base/macros.h"
 #include "client/crash_report_database.h"
@@ -172,6 +173,8 @@ class CrashReportUploadThread : public WorkerThread::Delegate,
   WorkerThread thread_;
   ThreadSafeVector<UUID> known_pending_report_uuids_;
   CrashReportDatabase* database_;  // weak
+  std::mt19937 rd_;
+  std::uniform_int_distribution<int> dist_;
 
   DISALLOW_COPY_AND_ASSIGN(CrashReportUploadThread);
 };

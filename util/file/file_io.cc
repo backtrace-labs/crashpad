@@ -181,6 +181,27 @@ bool LoggingReadEntireFile(const base::FilePath& path, std::string* contents) {
   return LoggingReadToEOF(handle.get(), contents);
 }
 
+bool LoggingReadLastPartOfFile(const base::FilePath& path,
+                               std::string* contents,
+                               FileOffset numBytes)
+{
+  if (numBytes <= 0) {
+      return LoggingReadEntireFile(path, contents);
+  }
+
+  ScopedFileHandle handle(LoggingOpenFileForRead(path));
+  if (!handle.is_valid()) {
+    return false;
+  }
+  FileOffset start_offset = LoggingFileSizeByHandle(handle.get()) - numBytes;
+  if (start_offset > 0) {
+    if (LoggingSeekFile(handle.get(), start_offset, SEEK_SET) != start_offset) {
+      return false;
+	}
+  }
+  return LoggingReadToEOF(handle.get(), contents);
+}
+
 void CheckedCloseFile(FileHandle file) {
   CHECK(LoggingCloseFile(file));
 }

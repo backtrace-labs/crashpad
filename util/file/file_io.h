@@ -330,6 +330,14 @@ bool LoggingReadToEOF(FileHandle file, std::string* contents);
 //! \return `true` on success, or `false` with a message logged.
 bool LoggingReadEntireFile(const base::FilePath& path, std::string* contents);
 
+//! \brief Wraps LoggingReadLastPartOfFile() and ReadFile() reading the last
+//!        \a numBytes bytes of the file into \a contents.
+//!
+//! \return `true` on success, or `false` with a message logged.
+bool LoggingReadLastPartOfFile(const base::FilePath& path,
+                               std::string* contents,
+                               FileOffset numBytes);
+
 //! \brief Wraps `open()` or `CreateFile()`, opening an existing file for
 //!     reading.
 //!

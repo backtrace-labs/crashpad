@@ -19,6 +19,7 @@
 #include "base/logging.h"
 #include "util/file/file_writer.h"
 #include "util/numeric/safe_assignment.h"
+#include "client/crashpad_info.h"
 
 namespace crashpad {
 
@@ -107,10 +108,20 @@ void MinidumpSimpleStringDictionaryWriter::InitializeFromMap(
   DCHECK_EQ(state(), kStateMutable);
   DCHECK(entries_.empty());
 
+  // Save client simple annotation for we may need them in crash reporting.
+  CrashpadInfo* crashpad_info = CrashpadInfo::GetCrashpadInfo();
+  SimpleStringDictionary* simple_annotations =
+      crashpad_info->simple_annotations();
+  if (!simple_annotations) {
+    simple_annotations = new SimpleStringDictionary();
+    crashpad_info->set_simple_annotations(simple_annotations);
+  }
+
   for (const auto& iterator : map) {
     auto entry = std::make_unique<MinidumpSimpleStringDictionaryEntryWriter>();
     entry->SetKeyValue(iterator.first, iterator.second);
     AddEntry(std::move(entry));
+    simple_annotations->SetKeyValue(iterator.first, iterator.second);
   }
 }
 

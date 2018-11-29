@@ -17,7 +17,6 @@
 #include <elf.h>
 #include <errno.h>
 #include <sched.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -25,13 +24,10 @@
 #include <algorithm>
 
 #include "base/logging.h"
-#include "base/strings/string_number_conversions.h"
 #include "build/build_config.h"
 #include "snapshot/linux/debug_rendezvous.h"
-#include "util/file/directory_reader.h"
 #include "util/linux/auxiliary_vector.h"
 #include "util/linux/proc_stat_reader.h"
-#include "util/misc/as_underlying_type.h"
 
 namespace crashpad {
 
@@ -64,31 +60,36 @@ bool ProcessReaderLinux::Thread::InitializePtrace(
     return false;
   }
 
+  // TODO(jperaza): Collect scheduling priorities via the broker when they can't
+  // be collected directly.
+  have_priorities = false;
+
   // TODO(jperaza): Starting with Linux 3.14, scheduling policy, static
   // priority, and nice value can be collected all in one call with
   // sched_getattr().
   int res = sched_getscheduler(tid);
   if (res < 0) {
-    PLOG(ERROR) << "sched_getscheduler";
-    return false;
+    PLOG(WARNING) << "sched_getscheduler";
+    return true;
   }
   sched_policy = res;
 
   sched_param param;
   if (sched_getparam(tid, &param) != 0) {
-    PLOG(ERROR) << "sched_getparam";
-    return false;
+    PLOG(WARNING) << "sched_getparam";
+    return true;
   }
   static_priority = param.sched_priority;
 
   errno = 0;
   res = getpriority(PRIO_PROCESS, tid);
   if (res == -1 && errno) {
-    PLOG(ERROR) << "getpriority";
-    return false;
+    PLOG(WARNING) << "getpriority";
+    return true;
   }
   nice_value = res;
 
+  have_priorities = true;
   return true;
 }
 
@@ -100,6 +101,9 @@ void ProcessReaderLinux::Thread::InitializeStack(ProcessReaderLinux* reader) {
 #elif defined(ARCH_CPU_ARM_FAMILY)
   stack_pointer = reader->Is64Bit() ? thread_info.thread_context.t64.sp
                                     : thread_info.thread_context.t32.sp;
+#elif defined(ARCH_CPU_MIPS_FAMILY)
+  stack_pointer = reader->Is64Bit() ? thread_info.thread_context.t64.regs[29]
+                                    : thread_info.thread_context.t32.regs[29];
 #else
 #error Port.
 #endif
@@ -233,7 +237,7 @@ bool ProcessReaderLinux::CPUTimes(timeval* user_time,
 
   for (const Thread& thread : threads_) {
     ProcStatReader stat;
-    if (!stat.Initialize(thread.tid)) {
+    if (!stat.Initialize(connection_, thread.tid)) {
       return false;
     }
 
@@ -295,23 +299,11 @@ void ProcessReaderLinux::InitializeThreads() {
     LOG(WARNING) << "Couldn't initialize main thread.";
   }
 
-  char path[32];
-  snprintf(path, arraysize(path), "/proc/%d/task", pid);
   bool main_thread_found = false;
-  DirectoryReader reader;
-  if (!reader.Open(base::FilePath(path))) {
-    return;
-  }
-  base::FilePath tid_str;
-  DirectoryReader::Result result;
-  while ((result = reader.NextFile(&tid_str)) ==
-         DirectoryReader::Result::kSuccess) {
-    pid_t tid;
-    if (!base::StringToInt(tid_str.value(), &tid)) {
-      LOG(ERROR) << "format error";
-      continue;
-    }
-
+  std::vector<pid_t> thread_ids;
+  bool result = connection_->Threads(&thread_ids);
+  DCHECK(result);
+  for (pid_t tid : thread_ids) {
     if (tid == pid) {
       DCHECK(!main_thread_found);
       main_thread_found = true;
@@ -325,8 +317,6 @@ void ProcessReaderLinux::InitializeThreads() {
       threads_.push_back(thread);
     }
   }
-  DCHECK_EQ(AsUnderlyingType(result),
-            AsUnderlyingType(DirectoryReader::Result::kNoMoreFiles));
   DCHECK(main_thread_found);
 }
 
@@ -344,20 +334,45 @@ void ProcessReaderLinux::InitializeModules() {
     return;
   }
 
-  const MemoryMap::Mapping* exe_mapping;
-  if (!(exe_mapping = GetMemoryMap()->FindMapping(phdrs)) ||
-      !(exe_mapping = GetMemoryMap()->FindFileMmapStart(*exe_mapping))) {
-    return;
-  }
-
   ProcessMemoryRange range;
   if (!range.Initialize(Memory(), is_64_bit_)) {
     return;
   }
 
-  auto exe_reader = std::make_unique<ElfImageReader>();
-  if (!exe_reader->Initialize(range, exe_mapping->range.Base())) {
-    return;
+  // The strategy used for identifying loaded modules depends on ELF files
+  // conventionally loading their header and program headers into memory.
+  // Locating the correct module could fail if the headers aren't mapped, are
+  // mapped at an unexpected location, or if there are other mappings
+  // constructed to look like the ELF module being searched for.
+  const MemoryMap::Mapping* exe_mapping = nullptr;
+  std::unique_ptr<ElfImageReader> exe_reader;
+  {
+    const MemoryMap::Mapping* phdr_mapping = memory_map_.FindMapping(phdrs);
+    if (!phdr_mapping) {
+      return;
+    }
+
+    std::vector<const MemoryMap::Mapping*> possible_mappings =
+        memory_map_.FindFilePossibleMmapStarts(*phdr_mapping);
+    for (auto riter = possible_mappings.rbegin();
+         riter != possible_mappings.rend();
+         ++riter) {
+      auto mapping = *riter;
+      auto parsed_exe = std::make_unique<ElfImageReader>();
+      if (parsed_exe->Initialize(
+              range,
+              mapping->range.Base(),
+              /* verbose= */ possible_mappings.size() == 1) &&
+          parsed_exe->GetProgramHeaderTableAddress() == phdrs) {
+        exe_mapping = mapping;
+        exe_reader = std::move(parsed_exe);
+        break;
+      }
+    }
+    if (!exe_mapping) {
+      LOG(ERROR) << "no exe mappings " << possible_mappings.size();
+      return;
+    }
   }
 
   LinuxVMAddress debug_address;
@@ -383,19 +398,47 @@ void ProcessReaderLinux::InitializeModules() {
   aux.GetValue(AT_BASE, &loader_base);
 
   for (const DebugRendezvous::LinkEntry& entry : debug.Modules()) {
-    const MemoryMap::Mapping* mapping;
-    if (!(mapping = memory_map_.FindMapping(entry.dynamic_array)) ||
-        !(mapping = memory_map_.FindFileMmapStart(*mapping))) {
-      continue;
-    }
+    const MemoryMap::Mapping* module_mapping = nullptr;
+    std::unique_ptr<ElfImageReader> elf_reader;
+    {
+      const MemoryMap::Mapping* dyn_mapping =
+          memory_map_.FindMapping(entry.dynamic_array);
+      if (!dyn_mapping) {
+        continue;
+      }
 
-    auto elf_reader = std::make_unique<ElfImageReader>();
-    if (!elf_reader->Initialize(range, mapping->range.Base())) {
-      continue;
+      std::vector<const MemoryMap::Mapping*> possible_mappings =
+          memory_map_.FindFilePossibleMmapStarts(*dyn_mapping);
+      for (auto riter = possible_mappings.rbegin();
+           riter != possible_mappings.rend();
+           ++riter) {
+        auto mapping = *riter;
+        auto parsed_module = std::make_unique<ElfImageReader>();
+        VMAddress dynamic_address;
+        if (parsed_module->Initialize(
+                range,
+                mapping->range.Base(),
+                /* verbose= */ possible_mappings.size() == 1) &&
+            parsed_module->GetDynamicArrayAddress(&dynamic_address) &&
+            dynamic_address == entry.dynamic_array) {
+          module_mapping = mapping;
+          elf_reader = std::move(parsed_module);
+          break;
+        }
+      }
+      if (!module_mapping) {
+        LOG(ERROR) << "no module mappings " << possible_mappings.size();
+        continue;
+      }
     }
 
     Module module = {};
-    module.name = !entry.name.empty() ? entry.name : mapping->name;
+    std::string soname;
+    if (elf_reader->SoName(&soname) && !soname.empty()) {
+      module.name = soname;
+    } else {
+      module.name = !entry.name.empty() ? entry.name : module_mapping->name;
+    }
     module.elf_reader = elf_reader.get();
     module.type = loader_base && elf_reader->Address() == loader_base
                       ? ModuleSnapshot::kModuleTypeDynamicLoader

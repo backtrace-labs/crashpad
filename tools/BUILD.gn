@@ -14,7 +14,7 @@
 
 import("../build/crashpad_buildconfig.gni")
 
-source_set("tool_support") {
+static_library("tool_support") {
   sources = [
     "tool_support.cc",
     "tool_support.h",

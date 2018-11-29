@@ -14,8 +14,10 @@
 
 #include "handler/minidump_to_upload_parameters.h"
 
+#include "base/strings/string_number_conversions.h"
 #include "base/logging.h"
 #include "client/annotation.h"
+#include "client/crashpad_info.h"
 #include "snapshot/module_snapshot.h"
 #include "util/stdlib/map_insert.h"
 
@@ -81,6 +83,33 @@ std::map<std::string, std::string> BreakpadHTTPFormParametersFromMinidump(
   InsertOrReplaceMapEntry(&parameters, "guid", client_id.ToString());
 
   return parameters;
+}
+
+int64_t CrashpadUploadAttachmentFileSizeLimit(int default_kbytes) {
+  CrashpadInfo* crashpad_info = CrashpadInfo::GetCrashpadInfo();
+  SimpleStringDictionary* annotations = crashpad_info->simple_annotations();
+  int64_t limit = default_kbytes;
+  if (annotations) {
+    const char *val = annotations->GetValueForKey
+        ("UploadAttachmentKiloByteLimit");
+    if (val) { 
+       base::StringToInt64(std::string(val), &limit);
+    }
+  }
+  return limit * 1000L;
+}
+
+int CrashpadUploadPercentage(int default_percentage) {
+  CrashpadInfo* crashpad_info = CrashpadInfo::GetCrashpadInfo();
+  SimpleStringDictionary* annotations = crashpad_info->simple_annotations();
+  int percent = default_percentage;
+  if (annotations) {
+    const char *val = annotations->GetValueForKey("UploadPercentage");
+    if (val) { 
+       base::StringToInt(std::string(val), &percent);
+    }
+  }
+  return percent;
 }
 
 }  // namespace crashpad

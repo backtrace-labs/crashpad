@@ -80,6 +80,10 @@ static_library("handler") {
   if (crashpad_is_win) {
     cflags = [ "/wd4201" ]  # nonstandard extension used : nameless struct/union
   }
+
+  if (crashpad_is_fuchsia) {
+    deps += [ "../third_party/fuchsia:zx" ]
+  }
 }
 
 source_set("handler_test") {
@@ -113,6 +117,18 @@ source_set("handler_test") {
     data_deps = [
       ":crashpad_handler_test_extended_handler",
       ":fake_handler_that_crashes_at_startup",
+    ]
+  }
+}
+
+  if (crashpad_is_linux) {
+  crashpad_executable("crashpad_victim_test") {
+    sources = [
+      "victim_test_main.cc",
+    ]
+
+    deps = [
+      "../util",
     ]
   }
 }
@@ -165,7 +181,7 @@ crashpad_executable("crashpad_handler") {
 # installer will ignore files not named like a shared object, so give the
 # handler executable an acceptable name.
 if (crashpad_is_android) {
-  copy("crashpad_handler_module") {
+  copy("crashpad_handler_named_as_so") {
     deps = [
       ":crashpad_handler",
     ]

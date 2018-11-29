@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "handler/minidump_to_upload_parameters.h"
 #include "handler/linux/crash_report_exception_handler.h"
 
 #include <vector>
@@ -28,6 +29,7 @@
 #include "util/misc/metrics.h"
 #include "util/misc/tri_state.h"
 #include "util/misc/uuid.h"
+#include "util/roblox/user_callback_functions.h"
 
 namespace crashpad {
 
@@ -35,10 +37,12 @@ CrashReportExceptionHandler::CrashReportExceptionHandler(
     CrashReportDatabase* database,
     CrashReportUploadThread* upload_thread,
     const std::map<std::string, std::string>* process_annotations,
+    const std::map<std::string, base::FilePath>* process_attachments,
     const UserStreamDataSources* user_stream_data_sources)
     : database_(database),
       upload_thread_(upload_thread),
       process_annotations_(process_annotations),
+      process_attachments_(process_attachments),
       user_stream_data_sources_(user_stream_data_sources) {}
 
 CrashReportExceptionHandler::~CrashReportExceptionHandler() = default;
@@ -90,6 +94,7 @@ bool CrashReportExceptionHandler::HandleExceptionWithConnection(
     return false;
   }
 
+  RunUserCallbackOnDumpEvent(nullptr);
   Metrics::ExceptionCode(process_snapshot.Exception()->Exception());
 
   CrashpadInfoClientOptions client_options;
@@ -169,6 +174,25 @@ bool CrashReportExceptionHandler::HandleExceptionWithConnection(
       Metrics::ExceptionCaptureResult(
           Metrics::CaptureResult::kMinidumpWriteFailed);
       return false;
+    }
+
+    if (process_attachments_) {
+      // Note that attachments are read at this point each time rather than once
+      // so that if the contents of the file has changed it will be re-read for
+      // each upload (e.g. in the case of a log file).
+      for (const auto& it : *process_attachments_) {
+        FileWriter* writer = new_report->AddAttachment(it.first);
+        if (writer) {
+          std::string contents;
+          int64_t nBytes = CrashpadUploadAttachmentFileSizeLimit();
+          if (!LoggingReadLastPartOfFile(it.second, &contents, (FileOffset)nBytes)) {
+            // Not being able to read the file isn't considered fatal, and
+            // should not prevent the report from being processed.
+            continue;
+          }
+          writer->Write(contents.data(), contents.size());
+        }
+      }
     }
 
     UUID uuid;

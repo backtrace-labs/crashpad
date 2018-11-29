@@ -296,40 +296,75 @@ const MemoryMap::Mapping* MemoryMap::FindMappingWithName(
   return nullptr;
 }
 
-const MemoryMap::Mapping* MemoryMap::FindFileMmapStart(
+std::vector<const MemoryMap::Mapping*> MemoryMap::FindFilePossibleMmapStarts(
     const Mapping& mapping) const {
   INITIALIZATION_STATE_DCHECK_VALID(initialized_);
 
-  size_t index = 0;
-  for (; index < mappings_.size(); ++index) {
-    if (mappings_[index].Equals(mapping)) {
-      break;
-    }
-  }
-  if (index >= mappings_.size()) {
-    LOG(ERROR) << "mapping not found";
-    return nullptr;
-  }
+  std::vector<const Mapping*> possible_starts;
 
   // If the mapping is anonymous, as is for the VDSO, there is no mapped file to
   // find the start of, so just return the input mapping.
   if (mapping.device == 0 && mapping.inode == 0) {
-    return &mappings_[index];
+    for (const auto& candidate : mappings_) {
+      if (mapping.Equals(candidate)) {
+        possible_starts.push_back(&candidate);
+        return possible_starts;
+      }
+    }
+
+    LOG(ERROR) << "mapping not found";
+    return std::vector<const Mapping*>();
   }
 
-  do {
-    // There may by anonymous mappings or other files mapped into the holes,
-    // so check that the mapping uses the same file as the input, but keep
-    // searching if it doesn't.
-    if (mappings_[index].device == mapping.device &&
-        mappings_[index].inode == mapping.inode &&
-        mappings_[index].offset == 0) {
-      return &mappings_[index];
+#if defined(OS_ANDROID)
+  // The Android Chromium linker uses ashmem to share RELRO segments between
+  // processes. The original RELRO segment has been unmapped and replaced with a
+  // mapping named "/dev/ashmem/RELRO:<libname>" where <libname> is the base
+  // library name (e.g. libchrome.so) sans any preceding path that may be
+  // present in other mappings for the library.
+  // https://crashpad.chromium.org/bug/253
+  static constexpr char kRelro[] = "/dev/ashmem/RELRO:";
+  if (mapping.name.compare(0, strlen(kRelro), kRelro, 0, strlen(kRelro)) == 0) {
+    // The kernel appends "(deleted)" to ashmem mappings because there isn't
+    // any corresponding file on the filesystem.
+    static constexpr char kDeleted[] = " (deleted)";
+    size_t libname_end = mapping.name.rfind(kDeleted);
+    DCHECK_NE(libname_end, std::string::npos);
+    if (libname_end == std::string::npos) {
+      libname_end = mapping.name.size();
     }
-  } while (index--);
+
+    std::string libname =
+        mapping.name.substr(strlen(kRelro), libname_end - strlen(kRelro));
+    for (const auto& candidate : mappings_) {
+      if (candidate.name.rfind(libname) != std::string::npos) {
+        possible_starts.push_back(&candidate);
+      }
+      if (mapping.Equals(candidate)) {
+        return possible_starts;
+      }
+    }
+  }
+#endif  // OS_ANDROID
+
+  for (const auto& candidate : mappings_) {
+    if (candidate.device == mapping.device &&
+        candidate.inode == mapping.inode
+#if !defined(OS_ANDROID)
+        // Libraries on Android may be mapped from zipfiles (APKs), in which
+        // case the offset is not 0.
+        && candidate.offset == 0
+#endif  // !defined(OS_ANDROID)
+        ) {
+      possible_starts.push_back(&candidate);
+    }
+    if (mapping.Equals(candidate)) {
+      return possible_starts;
+    }
+  }
 
   LOG(ERROR) << "mapping not found";
-  return nullptr;
+  return std::vector<const Mapping*>();
 }
 
 }  // namespace crashpad

@@ -56,6 +56,19 @@ namespace crashpad {
 std::map<std::string, std::string> BreakpadHTTPFormParametersFromMinidump(
     const ProcessSnapshot* process_snapshot);
 
+//! \brief Get the configured size limit of uploading a single file.
+//!     
+//! \returns the maximum number of bytes allowed to upload for a single
+//!          attachment, default to \a default_kbytes * 1000, 0 means
+//!          unlimited.
+int64_t CrashpadUploadAttachmentFileSizeLimit(int default_kbytes = 0);
+
+//! \brief Get the configured percentage of minidump file uploading.
+//!     
+//! \returns the configured percentage of dump files shall be uploaded to
+//!          servers, if none configured, default to \a default_percentage.
+int CrashpadUploadPercentage(int default_percentage = 10);
+
 }  // namespace crashpad
 
 #endif  // HANDLER_MINIDUMP_TO_UPLOAD_PARAMETERS_H_

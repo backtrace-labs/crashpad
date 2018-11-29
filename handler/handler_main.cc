@@ -45,6 +45,7 @@
 #include "client/simple_string_dictionary.h"
 #include "handler/crash_report_upload_thread.h"
 #include "handler/prune_crash_reports_thread.h"
+#include "base/strings/utf_string_conversions.h"
 #include "tools/tool_support.h"
 #include "util/file/file_io.h"
 #include "util/misc/address_types.h"
@@ -143,12 +144,17 @@ void Usage(const base::FilePath& me) {
 #if defined(OS_LINUX) || defined(OS_ANDROID)
 "      --trace-parent-with-exception=EXCEPTION_INFORMATION_ADDRESS\n"
 "                              request a dump for the handler's parent process\n"
+"      --trace-parent-pid=pid\n"
+"                              Override --trace-parent-with-exception to apply to a different pid, for testing\n"
 "      --initial-client-fd=FD  a socket connected to a client.\n"
 "      --sanitization_information=SANITIZATION_INFORMATION_ADDRESS\n"
 "                              the address of a SanitizationInformation struct.\n"
 #endif  // OS_LINUX || OS_ANDROID
 "      --url=URL               send crash reports to this Breakpad server URL,\n"
 "                              only if uploads are enabled for the database\n"
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+"      --attachment=NAME=PATH  attach a copy of a file, along with a crash dump\n"
+#endif
 "      --help                  display this help and exit\n"
 "      --version               output version information and exit\n",
           me.value().c_str());
@@ -158,6 +164,7 @@ void Usage(const base::FilePath& me) {
 struct Options {
   std::map<std::string, std::string> annotations;
   std::map<std::string, std::string> monitor_self_annotations;
+  std::map<std::string, base::FilePath> attachments;
   std::string url;
   base::FilePath database;
   base::FilePath metrics_dir;
@@ -169,6 +176,7 @@ struct Options {
 #elif defined(OS_LINUX) || defined(OS_ANDROID)
   VMAddress exception_information_address;
   int initial_client_fd;
+  int parent_pid;
   VMAddress sanitization_information_address;
 #elif defined(OS_WIN)
   std::string pipe_name;
@@ -203,7 +211,32 @@ bool AddKeyValueToMap(std::map<std::string, std::string>* map,
   }
   return true;
 }
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+// Overloaded version, to accept base::FilePath as a VALUE.
+bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
+                      const std::string& key_value,
+                      const char* argument) {
+  std::string key;
+  std::string raw_value;
+  if (!SplitStringFirst(key_value, '=', &key, &raw_value)) {
+    LOG(ERROR) << argument << " requires NAME=PATH";
+    return false;
+  }
 
+#ifdef OS_WIN
+  base::FilePath value(base::UTF8ToUTF16(raw_value));
+#else
+  base::FilePath value(raw_value);
+#endif
+
+  base::FilePath old_value;
+  if (!MapInsertOrReplace(map, key, value, &old_value)) {
+    LOG(WARNING) << argument << " has duplicate name " << key
+                 << ", discarding value " << old_value.value().c_str();
+  }
+  return true;
+}
+#endif
 // Calls Metrics::HandlerLifetimeMilestone, but only on the first call. This is
 // to prevent multiple exit events from inadvertently being recorded, which
 // might happen if a crash occurs during destruction in what would otherwise be
@@ -539,9 +572,12 @@ int HandlerMain(int argc,
     kOptionTraceParentWithException,
     kOptionInitialClientFD,
     kOptionSanitizationInformation,
+    kOptionTraceParentPid,
 #endif
     kOptionURL,
-
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX)
+    kOptionAttachment,
+#endif
     // Standard options.
     kOptionHelp = -2,
     kOptionVersion = -3,
@@ -598,8 +634,15 @@ int HandlerMain(int argc,
      required_argument,
      nullptr,
      kOptionSanitizationInformation},
+    {"trace-parent-pid",
+     required_argument,
+     nullptr,
+     kOptionTraceParentPid},
 #endif  // OS_LINUX || OS_ANDROID
     {"url", required_argument, nullptr, kOptionURL},
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX)
+    {"attachment", required_argument, nullptr, kOptionAttachment},
+#endif
     {"help", no_argument, nullptr, kOptionHelp},
     {"version", no_argument, nullptr, kOptionVersion},
     {nullptr, 0, nullptr, 0},
@@ -617,6 +660,7 @@ int HandlerMain(int argc,
   options.exception_information_address = 0;
   options.initial_client_fd = kInvalidFileHandle;
   options.sanitization_information_address = 0;
+  options.parent_pid = getppid();
 #endif
 
   int opt;
@@ -716,6 +760,14 @@ int HandlerMain(int argc,
         }
         break;
       }
+      case kOptionTraceParentPid: {
+        if (!StringToNumber(optarg, &options.parent_pid)) {
+          ToolSupport::UsageHint(
+              me, "failed to parse --trace-parent-pid");
+          return ExitFailure();
+        }
+        break;
+      }
       case kOptionInitialClientFD: {
         if (!base::StringToInt(optarg, &options.initial_client_fd)) {
           ToolSupport::UsageHint(me, "failed to parse --initial-client-fd");
@@ -737,6 +789,14 @@ int HandlerMain(int argc,
         options.url = optarg;
         break;
       }
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+      case kOptionAttachment: {
+        if (!AddKeyValueToMap(&options.attachments, optarg, "--attachment")) {
+          return ExitFailure();
+        }
+        break;
+      }
+#endif
       case kOptionHelp: {
         Usage(me);
         MetricsRecordExit(Metrics::LifetimeMilestone::kExitedEarly);
@@ -860,9 +920,9 @@ int HandlerMain(int argc,
       database.get(),
       static_cast<CrashReportUploadThread*>(upload_thread.Get()),
       &options.annotations,
-#if defined(OS_FUCHSIA)
-      // TODO(scottmg): Process level file attachments, and for all platforms.
-      nullptr,
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+      // TODO(scottmg): for all platforms.
+      &options.attachments,
 #endif
       user_stream_sources);
 
@@ -872,7 +932,7 @@ int HandlerMain(int argc,
     info.exception_information_address = options.exception_information_address;
     info.sanitization_information_address =
         options.sanitization_information_address;
-    return exception_handler.HandleException(getppid(), info) ? EXIT_SUCCESS
+    return exception_handler.HandleException(options.parent_pid, info) ? EXIT_SUCCESS
                                                               : ExitFailure();
   }
 #endif  // OS_LINUX || OS_ANDROID
@@ -943,14 +1003,13 @@ int HandlerMain(int argc,
   // owns them in this process. There is currently no "connect-later" mode on
   // Fuchsia, all the binding must be done by the client before starting
   // crashpad_handler.
-  base::ScopedZxHandle root_job(zx_take_startup_handle(PA_HND(PA_USER0, 0)));
+  zx::job root_job(zx_take_startup_handle(PA_HND(PA_USER0, 0)));
   if (!root_job.is_valid()) {
     LOG(ERROR) << "no process handle passed in startup handle 0";
     return EXIT_FAILURE;
   }
 
-  base::ScopedZxHandle exception_port(
-      zx_take_startup_handle(PA_HND(PA_USER0, 1)));
+  zx::port exception_port(zx_take_startup_handle(PA_HND(PA_USER0, 1)));
   if (!exception_port.is_valid()) {
     LOG(ERROR) << "no exception port handle passed in startup handle 1";
     return EXIT_FAILURE;
@@ -977,8 +1036,10 @@ int HandlerMain(int argc,
 
 #if defined(OS_WIN)
   if (options.initial_client_data.IsValid()) {
-    exception_handler_server.InitializeWithInheritedDataForInitialClient(
-        options.initial_client_data, &exception_handler);
+    if (!exception_handler_server.InitializeWithInheritedDataForInitialClient(
+        options.initial_client_data, &exception_handler)) {
+      return EXIT_FAILURE;
+    }
   }
 #elif defined(OS_LINUX) || defined(OS_ANDROID)
   if (options.initial_client_fd == kInvalidFileHandle ||

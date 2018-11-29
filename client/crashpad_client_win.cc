@@ -569,6 +569,35 @@ CrashpadClient::CrashpadClient() : ipc_pipe_(), handler_start_thread_() {}
 
 CrashpadClient::~CrashpadClient() {}
 
+bool CrashpadClient::StartHandlerForBacktrace(
+    const base::FilePath& handler,
+    const base::FilePath& database,
+    const base::FilePath& metrics_dir,
+    const std::string& url,
+    const std::map<std::string, std::string>& annotations,
+    const std::vector<std::string>& arguments,
+    const std::map<std::string, std::string>& fileAttachments,
+    bool restartable,
+    bool asynchronous_start) {
+
+  auto modified_arguments = arguments;
+
+  for(const auto& fa : fileAttachments) {
+    std::stringstream str;
+    str << "--attachment=attachment_" << fa.first << "=" << fa.second;
+    modified_arguments.push_back(str.str());
+  }
+
+  return StartHandler(handler,
+                      database,
+                      metrics_dir,
+                      url,
+                      annotations,
+                      modified_arguments,
+                      restartable,
+                      asynchronous_start);
+}
+
 bool CrashpadClient::StartHandler(
     const base::FilePath& handler,
     const base::FilePath& database,

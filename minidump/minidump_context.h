@@ -389,11 +389,16 @@ struct MinidumpContextARM {
 //! \brief 64-bit ARM-specifc flags for MinidumpContextARM64::context_flags.
 enum MinidumpContextARM64Flags : uint32_t {
   //! \brief Identifies the context structure as 64-bit ARM.
-  kMinidumpContextARM64 = 0x80000000,
+  kMinidumpContextARM64 = 0x00400000,
+
+  //! \brief Indicates the validity of control registers.
+  //!
+  //! Registers `fp`, `lr`, `sp`, `pc`, and `cpsr`.
+  kMinidumpContextARM64Control = kMinidumpContextARM64 | 0x00000001,
 
   //! \brief Indicates the validty of integer registers.
   //!
-  //! Registers `x0`-`x31`, `pc`, and `cpsr`.
+  //! Registers `x0`-`x28`.
   kMinidumpContextARM64Integer = kMinidumpContextARM64 | 0x00000002,
 
   //! \brief Indicates the validity of fpsimd registers.
@@ -401,17 +406,37 @@ enum MinidumpContextARM64Flags : uint32_t {
   //! Registers `v0`-`v31`, `fpsr`, and `fpcr` are valid.
   kMinidumpContextARM64Fpsimd = kMinidumpContextARM64 | 0x00000004,
 
+  //! \brief Indicates the validity of debug registers.
+  //!
+  //! `bcr`, `bvr`, `wcr`, and `wvr` are valid.
+  kMinidumpContextARM64Debug = kMinidumpContextARM64 | 0x00000008,
+
+  //! \brief Indicates the validity of control, integer and floating point
+  //!     registers.
+  kMinidumpContextARM64Full = kMinidumpContextARM64Control |
+                              kMinidumpContextARM64Integer |
+                              kMinidumpContextARM64Fpsimd,
+
   //! \brief Indicates the validity of all registers.
   kMinidumpContextARM64All =
-      kMinidumpContextARM64Integer | kMinidumpContextARM64Fpsimd,
+      kMinidumpContextARM64Full | kMinidumpContextARM64Debug,
 };
 
 //! \brief A 64-bit ARM CPU context (register state) carried in a minidump file.
 struct MinidumpContextARM64 {
-  uint64_t context_flags;
+  uint32_t context_flags;
 
-  //! \brief General-purpose registers `x0`-`x30`.
-  uint64_t regs[31];
+  //! \brief Current program status register.
+  uint32_t cpsr;
+
+  //! \brief General-purpose registers `x0`-`x28`.
+  uint64_t regs[29];
+
+  //! \brief Frame pointer or `x29`.
+  uint64_t fp;
+
+  //! \brief Link register or `x30`.
+  uint64_t lr;
 
   //! \brief Stack pointer or `x31`.
   uint64_t sp;
@@ -419,17 +444,152 @@ struct MinidumpContextARM64 {
   //! \brief Program counter.
   uint64_t pc;
 
-  //! \brief Current program status register.
-  uint32_t cpsr;
-
-  //! \brief Floating-point status register.
-  uint32_t fpsr;
+  //! \brief NEON registers `v0`-`v31`.
+  uint128_struct fpsimd[32];
 
   //! \brief Floating-point control register.
   uint32_t fpcr;
 
-  //! \brief NEON registers `v0`-`v31`.
-  uint128_struct fpsimd[32];
+  //! \brief Floating-point status register.
+  uint32_t fpsr;
+
+  //! \brief Debug registers.
+  uint32_t bcr[8];
+  uint64_t bvr[8];
+  uint32_t wcr[2];
+  uint64_t wvr[2];
+};
+
+//! \brief 32bit MIPS-specifc flags for MinidumpContextMIPS::context_flags.
+//! Based on minidump_cpu_mips.h from breakpad
+enum MinidumpContextMIPSFlags : uint32_t {
+  //! \brief Identifies the context structure as MIPSEL.
+  kMinidumpContextMIPS = 0x00040000,
+
+  //! \brief Indicates the validity of integer registers.
+  //!
+  //! Registers `0`-`31`, `mdhi`, `mdlo`, `epc`, `badvaddr`, `status` and
+  //! `cause` are valid.
+  kMinidumpContextMIPSInteger = kMinidumpContextMIPS | 0x00000002,
+
+  //! \brief Indicates the validity of floating point registers.
+  //!
+  //! Floating point registers `0`-`31`, `fpcsr` and `fir` are valid
+  kMinidumpContextMIPSFloatingPoint = kMinidumpContextMIPS | 0x00000004,
+
+  //! \brief Indicates the validity of DSP registers.
+  //!
+  //! Registers `hi0`-`hi2`, `lo0`-`lo2` and `dsp_control` are valid
+  kMinidumpContextMIPSDSP = kMinidumpContextMIPS | 0x00000008,
+
+  //! \brief Indicates the validity of all registers.
+  kMinidumpContextMIPSAll = kMinidumpContextMIPSInteger |
+                            kMinidumpContextMIPSFloatingPoint |
+                            kMinidumpContextMIPSDSP,
+};
+
+//! \brief A 32bit MIPS CPU context (register state) carried in a minidump file.
+struct MinidumpContextMIPS {
+  uint32_t context_flags;
+
+  //! \brief This padding field is included for breakpad compatibility.
+  uint32_t _pad0;
+  //! \brief General purpose registers `0`-`31`.
+  uint64_t regs[32];
+
+  //! \brief Multiply/divide result.
+  uint64_t mdhi, mdlo;
+
+  //! \brief DSP registers.
+  uint32_t hi[3];
+  uint32_t lo[3];
+  uint32_t dsp_control;
+  //! \brief This padding field is included for breakpad compatibility.
+  uint32_t _pad1;
+
+  // \brief cp0 registers.
+  uint64_t epc;
+  uint64_t badvaddr;
+  uint32_t status;
+  uint32_t cause;
+
+  //! \brief FPU registers.
+  union {
+    struct {
+      float _fp_fregs;
+      uint32_t _fp_pad;
+    } fregs[32];
+    double dregs[32];
+  } fpregs;
+
+  //! \brief FPU status register.
+  uint32_t fpcsr;
+  //! \brief FPU implementation register.
+  uint32_t fir;
+};
+
+//! \brief 64bit MIPS-specifc flags for MinidumpContextMIPS64::context_flags.
+//! Based on minidump_cpu_mips.h from breakpad
+enum MinidumpContextMIPS64Flags : uint32_t {
+  //! \brief Identifies the context structure as MIPS64EL.
+  kMinidumpContextMIPS64 = 0x00080000,
+
+  //! \brief Indicates the validity of integer registers.
+  //!
+  //! Registers `0`-`31`, `mdhi`, `mdlo`, `epc`, `badvaddr`, `status` and
+  //! `cause` are valid.
+  kMinidumpContextMIPS64Integer = kMinidumpContextMIPS64 | 0x00000002,
+
+  //! \brief Indicates the validity of floating point registers.
+  //!
+  //! Floating point registers `0`-`31`, `fpcsr` and `fir` are valid
+  kMinidumpContextMIPS64FloatingPoint = kMinidumpContextMIPS64 | 0x00000004,
+
+  //! \brief Indicates the validity of DSP registers.
+  //!
+  //! Registers `hi0`-`hi2`, `lo0`-`lo2` and `dsp_control` are valid.
+  kMinidumpContextMIPS64DSP = kMinidumpContextMIPS64 | 0x00000008,
+
+  //! \brief Indicates the validity of all registers.
+  kMinidumpContextMIPS64All = kMinidumpContextMIPS64Integer |
+                              kMinidumpContextMIPS64FloatingPoint |
+                              kMinidumpContextMIPS64DSP,
+};
+
+//! \brief A 32bit MIPS CPU context (register state) carried in a minidump file.
+struct MinidumpContextMIPS64 {
+  uint64_t context_flags;
+
+  //! \brief General purpose registers.
+  uint64_t regs[32];
+
+  //! \brief Multiply/divide result.
+  uint64_t mdhi, mdlo;
+
+  //! \brief DSP registers.
+  uint64_t hi[3];
+  uint64_t lo[3];
+  uint64_t dsp_control;
+
+  //! \brief cp0 registers.
+  uint64_t epc;
+  uint64_t badvaddr;
+  uint64_t status;
+  uint64_t cause;
+
+  //! \brief FPU registers.
+  union {
+    struct {
+      float _fp_fregs;
+      uint32_t _fp_pad;
+    } fregs[32];
+    double dregs[32];
+  } fpregs;
+
+  //! \brief FPU status register.
+  uint64_t fpcsr;
+  //! \brief FPU implementation register.
+  uint64_t fir;
 };
 
 }  // namespace crashpad

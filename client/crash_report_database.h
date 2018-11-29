@@ -117,7 +117,7 @@ class CrashReportDatabase {
 
     //! \brief Adds an attachment to the report.
     //!
-    //! \note This function is not yet implemented on macOS or Windows.
+    //! \note This function is not yet implemented on macOS.
     //!
     //! \param[in] name The key and name for the attachment, which will be
     //!     included in the http upload. The attachment will not appear in the
@@ -178,6 +178,7 @@ class CrashReportDatabase {
     CrashReportDatabase* database_;
     std::vector<std::unique_ptr<FileReader>> attachment_readers_;
     std::map<std::string, FileReader*> attachment_map_;
+    bool report_metrics_;
 
     DISALLOW_COPY_AND_ASSIGN(UploadReport);
   };
@@ -326,11 +327,16 @@ class CrashReportDatabase {
   //! \param[in] uuid The unique identifier for the crash report record.
   //! \param[out] report A crash report record for the report to be uploaded.
   //!     Only valid if this returns #kNoError.
+  //! \param[in] report_metrics If `false`, metrics will not be recorded for
+  //!     this upload attempt when RecordUploadComplete() is called or \a report
+  //!     is destroyed. Metadata for the upload attempt will still be recorded
+  //!     in the database.
   //!
   //! \return The operation status code.
   virtual OperationStatus GetReportForUploading(
       const UUID& uuid,
-      std::unique_ptr<const UploadReport>* report) = 0;
+      std::unique_ptr<const UploadReport>* report,
+      bool report_metrics = true) = 0;
 
   //! \brief Records a successful upload for a report and updates the last
   //!     upload attempt time as returned by
@@ -386,7 +392,7 @@ class CrashReportDatabase {
   //! \param[in] lockfile_ttl The number of seconds at which lockfiles or new
   //!     report files are considered expired.
   //! \return The number of reports cleaned.
-  virtual int CleanDatabase(time_t lockfile_ttl) { return 0; }
+  virtual int CleanDatabase(time_t lockfile_ttl) { (void)lockfile_ttl; return 0; }
 
  protected:
   CrashReportDatabase() {}

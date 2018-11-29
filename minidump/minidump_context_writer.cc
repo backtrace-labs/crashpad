@@ -87,6 +87,20 @@ MinidumpContextWriter::CreateFromSnapshot(const CPUContext* context_snapshot) {
       break;
     }
 
+    case kCPUArchitectureMIPSEL: {
+      context = std::make_unique<MinidumpContextMIPSWriter>();
+      reinterpret_cast<MinidumpContextMIPSWriter*>(context.get())
+          ->InitializeFromSnapshot(context_snapshot->mipsel);
+      break;
+    }
+
+    case kCPUArchitectureMIPS64EL: {
+      context = std::make_unique<MinidumpContextMIPS64Writer>();
+      reinterpret_cast<MinidumpContextMIPS64Writer*>(context.get())
+          ->InitializeFromSnapshot(context_snapshot->mips64);
+      break;
+    }
+
     default: {
       LOG(ERROR) << "unknown context architecture "
                  << context_snapshot->architecture;
@@ -307,13 +321,7 @@ void MinidumpContextARM64Writer::InitializeFromSnapshot(
   DCHECK_EQ(state(), kStateMutable);
   DCHECK_EQ(context_.context_flags, kMinidumpContextARM64);
 
-  context_.context_flags = kMinidumpContextARM64All;
-
-  static_assert(sizeof(context_.regs) == sizeof(context_snapshot->regs),
-                "GPRs size mismatch");
-  memcpy(context_.regs, context_snapshot->regs, sizeof(context_.regs));
-  context_.sp = context_snapshot->sp;
-  context_.pc = context_snapshot->pc;
+  context_.context_flags = kMinidumpContextARM64Full;
 
   if (context_snapshot->pstate >
       std::numeric_limits<decltype(context_.cpsr)>::max()) {
@@ -322,11 +330,26 @@ void MinidumpContextARM64Writer::InitializeFromSnapshot(
   context_.cpsr =
       static_cast<decltype(context_.cpsr)>(context_snapshot->pstate);
 
-  context_.fpsr = context_snapshot->fpsr;
-  context_.fpcr = context_snapshot->fpcr;
+  static_assert(
+      sizeof(context_.regs) == sizeof(context_snapshot->regs) -
+                                   2 * sizeof(context_snapshot->regs[0]),
+      "GPRs size mismatch");
+  memcpy(context_.regs, context_snapshot->regs, sizeof(context_.regs));
+  context_.fp = context_snapshot->regs[29];
+  context_.lr = context_snapshot->regs[30];
+  context_.sp = context_snapshot->sp;
+  context_.pc = context_snapshot->pc;
+
   static_assert(sizeof(context_.fpsimd) == sizeof(context_snapshot->fpsimd),
                 "FPSIMD size mismatch");
   memcpy(context_.fpsimd, context_snapshot->fpsimd, sizeof(context_.fpsimd));
+  context_.fpcr = context_snapshot->fpcr;
+  context_.fpsr = context_snapshot->fpsr;
+
+  memset(context_.bcr, 0, sizeof(context_.bcr));
+  memset(context_.bvr, 0, sizeof(context_.bvr));
+  memset(context_.wcr, 0, sizeof(context_.wcr));
+  memset(context_.wvr, 0, sizeof(context_.wvr));
 }
 
 bool MinidumpContextARM64Writer::WriteObject(FileWriterInterface* file_writer) {
@@ -335,6 +358,103 @@ bool MinidumpContextARM64Writer::WriteObject(FileWriterInterface* file_writer) {
 }
 
 size_t MinidumpContextARM64Writer::ContextSize() const {
+  DCHECK_GE(state(), kStateFrozen);
+  return sizeof(context_);
+}
+
+MinidumpContextMIPSWriter::MinidumpContextMIPSWriter()
+    : MinidumpContextWriter(), context_() {
+  context_.context_flags = kMinidumpContextMIPS;
+}
+
+MinidumpContextMIPSWriter::~MinidumpContextMIPSWriter() = default;
+
+void MinidumpContextMIPSWriter::InitializeFromSnapshot(
+    const CPUContextMIPS* context_snapshot) {
+  DCHECK_EQ(state(), kStateMutable);
+  DCHECK_EQ(context_.context_flags, kMinidumpContextMIPS);
+
+  context_.context_flags = kMinidumpContextMIPSAll;
+
+  static_assert(sizeof(context_.regs) == sizeof(context_snapshot->regs),
+                "GPRs size mismatch");
+  memcpy(context_.regs, context_snapshot->regs, sizeof(context_.regs));
+  context_.mdhi = context_snapshot->mdhi;
+  context_.mdlo = context_snapshot->mdlo;
+  context_.epc = context_snapshot->cp0_epc;
+  context_.badvaddr = context_snapshot->cp0_badvaddr;
+  context_.status = context_snapshot->cp0_status;
+  context_.cause = context_snapshot->cp0_cause;
+
+  static_assert(sizeof(context_.fpregs) == sizeof(context_snapshot->fpregs),
+                "FPRs size mismatch");
+  memcpy(&context_.fpregs, &context_snapshot->fpregs, sizeof(context_.fpregs));
+  context_.fpcsr = context_snapshot->fpcsr;
+  context_.fir = context_snapshot->fir;
+
+  for (size_t index = 0; index < 3; ++index) {
+    context_.hi[index] = context_snapshot->hi[index];
+    context_.lo[index] = context_snapshot->lo[index];
+  }
+  context_.dsp_control = context_snapshot->dsp_control;
+}
+
+bool MinidumpContextMIPSWriter::WriteObject(FileWriterInterface* file_writer) {
+  DCHECK_EQ(state(), kStateWritable);
+  return file_writer->Write(&context_, sizeof(context_));
+}
+
+size_t MinidumpContextMIPSWriter::ContextSize() const {
+  DCHECK_GE(state(), kStateFrozen);
+  return sizeof(context_);
+}
+
+MinidumpContextMIPS64Writer::MinidumpContextMIPS64Writer()
+    : MinidumpContextWriter(), context_() {
+  context_.context_flags = kMinidumpContextMIPS64;
+}
+
+MinidumpContextMIPS64Writer::~MinidumpContextMIPS64Writer() = default;
+
+void MinidumpContextMIPS64Writer::InitializeFromSnapshot(
+    const CPUContextMIPS64* context_snapshot) {
+  DCHECK_EQ(state(), kStateMutable);
+  DCHECK_EQ(context_.context_flags, kMinidumpContextMIPS64);
+
+  context_.context_flags = kMinidumpContextMIPS64All;
+
+  static_assert(sizeof(context_.regs) == sizeof(context_snapshot->regs),
+                "GPRs size mismatch");
+  memcpy(context_.regs, context_snapshot->regs, sizeof(context_.regs));
+  context_.mdhi = context_snapshot->mdhi;
+  context_.mdlo = context_snapshot->mdlo;
+  context_.epc = context_snapshot->cp0_epc;
+  context_.badvaddr = context_snapshot->cp0_badvaddr;
+  context_.status = context_snapshot->cp0_status;
+  context_.cause = context_snapshot->cp0_cause;
+
+  static_assert(sizeof(context_.fpregs) == sizeof(context_snapshot->fpregs),
+                "FPRs size mismatch");
+  memcpy(context_.fpregs.dregs,
+         context_snapshot->fpregs.dregs,
+         sizeof(context_.fpregs.dregs));
+  context_.fpcsr = context_snapshot->fpcsr;
+  context_.fir = context_snapshot->fir;
+
+  for (size_t index = 0; index < 3; ++index) {
+    context_.hi[index] = context_snapshot->hi[index];
+    context_.lo[index] = context_snapshot->lo[index];
+  }
+  context_.dsp_control = context_snapshot->dsp_control;
+}
+
+bool MinidumpContextMIPS64Writer::WriteObject(
+    FileWriterInterface* file_writer) {
+  DCHECK_EQ(state(), kStateWritable);
+  return file_writer->Write(&context_, sizeof(context_));
+}
+
+size_t MinidumpContextMIPS64Writer::ContextSize() const {
   DCHECK_GE(state(), kStateFrozen);
   return sizeof(context_);
 }

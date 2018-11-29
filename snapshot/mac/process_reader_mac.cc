@@ -448,6 +448,8 @@ void ProcessReaderMac::InitializeModules() {
 
     std::unique_ptr<MachOImageReader> reader(new MachOImageReader());
     if (!reader->Initialize(this, image_info.imageLoadAddress, module.name)) {
+      LOG(WARNING) << base::StringPrintf("failed to initialize reader %s, Mach-O type %d",
+                                module.name.c_str(), reader->FileType());
       reader.reset();
     }
 

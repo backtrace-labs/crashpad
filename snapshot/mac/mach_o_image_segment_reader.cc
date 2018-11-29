@@ -182,12 +182,14 @@ bool MachOImageSegmentReader::Initialize(ProcessReaderMac* process_reader,
     if (!segment_range.ContainsRange(section_range)) {
       LOG(WARNING) << base::StringPrintf(
                           "section at 0x%llx + 0x%llx outside of segment at "
-                          "0x%llx + 0x%llx",
+                          "0x%llx + 0x%llx, This problem may be caused by "
+						  "binary obsfuscation, e.g. using VMProtect, still "
+						  "we need include this section to generate minidump.", 
                           section.addr,
                           section.size,
                           segment_command_.vmaddr,
                           segment_command_.vmsize) << section_info;
-      return false;
+      // go on add the image of this section as it may be caused by VMProtect. 
     }
 
     const auto insert_result =

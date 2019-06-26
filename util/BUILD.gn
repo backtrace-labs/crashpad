@@ -381,8 +381,8 @@ static_library("util") {
         deps += [ "//third_party/boringssl" ]
       } else {
         libs = [
-          "crypto",
-          "ssl",
+          ":libcrypto.so.1.1",
+          ":libssl.so.1.1",
         ]
       }
     }

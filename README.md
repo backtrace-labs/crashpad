@@ -14,6 +14,76 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# Backtrace modifications
+
+This repository contains modifications provided by
+[Backtrace I/O](https://backtrace.io).
+
+## Windows file attachment support
+
+Provided by [Ihor Dutchak](https://github.com/Youw/crashpad).
+
+There also exists a Backtrace-specific function:
+
+```
+bool StartHandlerForBacktrace(const base::FilePath& handler,
+                              const base::FilePath& database,
+                              const base::FilePath& metrics_dir,
+                              const std::string& url,
+                              const std::map<std::string, std::string>& annotations,
+                              const std::vector<std::string>& arguments,
+                              const std::map<std::string, std::string>& fileAttachments,
+                              bool restartable,
+                              bool asynchronous_start);
+```
+
+It's very similar to `StartHandler`, with the exception of the
+`fileAttachments` parameter, which is a map of upload file names to
+local file paths.
+
+For example, the following code will upload the log file from the specified
+path as `2018-02-30.log`:
+
+```
+std::map<std::string, std::string> files = {
+    { "2018-02-30.log", "C:/my_app/2018-02-30.log" }
+};
+
+rc = client.StartHandlerForBacktrace(handler,
+    db,
+    db,
+    url,
+    annotations,
+    arguments,
+    files,
+    true,
+    true);
+```
+
+If one does not want to use a Backtrace-specific function, the same result of
+uploading a file attachment to Backtrace I/O can be achieved by adding elements
+to the `arguments` vector in the following format:
+```
+--attachment=attachment_$ATTACHMENT_NAME=$ATTACHMENT_FILE_PATH
+```
+
+For the above example of `2018-02-30.log`, the code would look as follows:
+
+```
+arguments.push_back(
+    "--attachment=attachment_2018-02-30.log=C:/my_app/2018-02-30.log"
+);
+```
+
+## Send reports using `EXCEPTION_POINTERS` in Windows
+A new function has been added to `CrashpadClient`, useful, example, when
+dealing with vectored exceptions. Additionally, it does not require that
+the process must end (the exception may be handled).
+
+```
+static void DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer);
+```
+
 # Crashpad
 
 [Crashpad](https://crashpad.chromium.org/) is a crash-reporting system.

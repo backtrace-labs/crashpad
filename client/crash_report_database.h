@@ -126,8 +126,6 @@ class CrashReportDatabase {
 
     //! \brief Adds an attachment to the report.
     //!
-    //! \note This function is not yet implemented on macOS.
-    //!
     //! \param[in] name The key and name for the attachment, which will be
     //!     included in the http upload. The attachment will not appear in the
     //!     minidump report. \a name should only use characters from the set
@@ -181,7 +179,7 @@ class CrashReportDatabase {
     friend class CrashReportDatabaseMac;
     friend class CrashReportDatabaseWin;
 
-    bool Initialize(const base::FilePath path, CrashReportDatabase* database);
+    bool Initialize(const base::FilePath& path, CrashReportDatabase* database);
     void InitializeAttachments();
 
     std::unique_ptr<FileReader> reader_;
@@ -401,10 +399,12 @@ class CrashReportDatabase {
   //! \param[in] lockfile_ttl The number of seconds at which lockfiles or new
   //!     report files are considered expired.
   //! \return The number of reports cleaned.
-  virtual int CleanDatabase(time_t lockfile_ttl) { return 0; }
+  virtual int CleanDatabase(time_t lockfile_ttl) { (void)lockfile_ttl; return 0; }
 
  protected:
   CrashReportDatabase() {}
+
+  static bool AttachmentNameIsOK(const std::string& name);
 
  private:
   //! \brief Adjusts a crash report record’s metadata to account for an upload

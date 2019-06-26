@@ -753,6 +753,9 @@ bool CrashReportDatabaseWin::Initialize(bool may_create) {
   if (!CreateDirectoryIfNecessary(base_dir_.Append(kReportsDirectory)))
     return false;
 
+  if (!CreateDirectoryIfNecessary(base_dir_.Append(kAttachmentsDirectory)))
+    return false;
+
   if (!settings_.Initialize(base_dir_.Append(kSettings)))
     return false;
 
@@ -920,6 +923,7 @@ OperationStatus CrashReportDatabaseWin::DeleteReport(const UUID& uuid) {
     return kDatabaseError;
 
   base::FilePath report_path;
+
   OperationStatus os = metadata->DeleteReport(uuid, &report_path);
   if (os != kNoError)
     return os;

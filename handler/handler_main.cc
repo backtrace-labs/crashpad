@@ -46,6 +46,7 @@
 #include "client/simple_string_dictionary.h"
 #include "handler/crash_report_upload_thread.h"
 #include "handler/prune_crash_reports_thread.h"
+#include "base/strings/utf_string_conversions.h"
 #include "tools/tool_support.h"
 #include "util/file/file_io.h"
 #include "util/misc/address_types.h"
@@ -163,6 +164,9 @@ void Usage(const base::FilePath& me) {
 #endif  // OS_LINUX || OS_CHROMEOS || OS_ANDROID
 "      --url=URL               send crash reports to this Breakpad server URL,\n"
 "                              only if uploads are enabled for the database\n"
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+"      --attachment=NAME=PATH  attach a copy of a file, along with a crash dump\n"
+#endif // OS_WIN || OS_FUCHSIA || OS_LINUX
 #if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
 "      --use-cros-crash-reporter\n"
 "                              pass crash reports to /sbin/crash_reporter\n"
@@ -219,7 +223,7 @@ struct Options {
   bool always_allow_feedback = false;
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
 #if defined(ATTACHMENTS_SUPPORTED)
-  std::vector<base::FilePath> attachments;
+  std::map<std::string, base::FilePath> attachments;
 #endif  // ATTACHMENTS_SUPPORTED
 };
 
@@ -245,6 +249,32 @@ bool AddKeyValueToMap(std::map<std::string, std::string>* map,
   }
   return true;
 }
+#if defined(ATTACHMENTS_SUPPORTED)
+// Overloaded version, to accept base::FilePath as a VALUE.
+bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
+                      const std::string& key_value,
+                      const char* argument) {
+  std::string key;
+  std::string raw_value;
+  if (!SplitStringFirst(key_value, '=', &key, &raw_value)) {
+    LOG(ERROR) << argument << " requires NAME=PATH";
+    return false;
+  }
+
+#ifdef OS_WIN
+  base::FilePath value(ToolSupport::CommandLineArgumentToFilePathStringType(raw_value));
+#else
+  base::FilePath value(raw_value);
+#endif
+
+  base::FilePath old_value;
+  if (!MapInsertOrReplace(map, key, value, &old_value)) {
+    LOG(WARNING) << argument << " has duplicate name " << key
+                 << ", discarding value " << old_value.value().c_str();
+  }
+  return true;
+}
+#endif // ATTACHMENTS_SUPPORTED
 
 // Calls Metrics::HandlerLifetimeMilestone, but only on the first call. This is
 // to prevent multiple exit events from inadvertently being recorded, which
@@ -537,10 +567,6 @@ int HandlerMain(int argc,
     // Long options without short equivalents.
     kOptionLastChar = 255,
     kOptionAnnotation,
-#if defined(OS_WIN) || defined(OS_LINUX) || defined(OS_CHROMEOS) || \
-    defined(OS_ANDROID)
-    kOptionAttachment,
-#endif  // OS_WIN || OS_LINUX
     kOptionDatabase,
 #if defined(OS_APPLE)
     kOptionHandshakeFD,
@@ -577,6 +603,9 @@ int HandlerMain(int argc,
     kOptionTraceParentWithException,
 #endif
     kOptionURL,
+#if defined(ATTACHMENTS_SUPPORTED)
+    kOptionAttachment,
+#endif // ATTACHMENTS_SUPPORTED
 #if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
     kOptionUseCrosCrashReporter,
     kOptionMinidumpDirForTests,
@@ -659,6 +688,9 @@ int HandlerMain(int argc,
      kOptionTraceParentWithException},
 #endif  // OS_LINUX || OS_CHROMEOS || OS_ANDROID
     {"url", required_argument, nullptr, kOptionURL},
+#if defined(ATTACHMENTS_SUPPORTED)
+    {"attachment", required_argument, nullptr, kOptionAttachment},
+#endif // ATTACHMENTS_SUPPORTED
 #if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
     {"use-cros-crash-reporter",
       no_argument,
@@ -705,13 +737,6 @@ int HandlerMain(int argc,
         }
         break;
       }
-#if defined(ATTACHMENTS_SUPPORTED)
-      case kOptionAttachment: {
-        options.attachments.push_back(base::FilePath(
-            ToolSupport::CommandLineArgumentToFilePathStringType(optarg)));
-        break;
-      }
-#endif  // ATTACHMENTS_SUPPORTED
       case kOptionDatabase: {
         options.database = base::FilePath(
             ToolSupport::CommandLineArgumentToFilePathStringType(optarg));
@@ -833,6 +858,14 @@ int HandlerMain(int argc,
         options.url = optarg;
         break;
       }
+#if defined(ATTACHMENTS_SUPPORTED)
+      case kOptionAttachment: {
+        if (!AddKeyValueToMap(&options.attachments, optarg, "--attachment")) {
+          return ExitFailure();
+        }
+        break;
+      }
+#endif // ATTACHMENTS_SUPPORTED
 #if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
       case kOptionUseCrosCrashReporter: {
         options.use_cros_crash_reporter = true;
@@ -1026,7 +1059,7 @@ int HandlerMain(int argc,
       &options.annotations,
 #if defined(ATTACHMENTS_SUPPORTED)
       &options.attachments,
-#endif  // ATTACHMENTS_SUPPORTED
+#endif // ATTACHMENTS_SUPPORTED
 #if defined(OS_ANDROID)
       options.write_minidump_to_database,
       options.write_minidump_to_log,

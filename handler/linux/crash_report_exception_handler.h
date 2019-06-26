@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 
+#include "base/files/file_path.h"
 #include "base/macros.h"
 #include "client/crash_report_database.h"
 #include "handler/crash_report_upload_thread.h"
@@ -53,8 +54,10 @@ class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
   //!     To interoperate with Breakpad servers, the recommended practice is to
   //!     specify values for the `"prod"` and `"ver"` keys as process
   //!     annotations.
-  //! \param[in] attachments A vector of file paths that should be captured with
-  //!     each report at the time of the crash.
+  //! \param[in] process_attachments A map of file name keys to file paths to be
+  //!     included in the report. Each time a report is written, the file paths
+  //!     will be read in their entirety and included in the report using the
+  //!     file name key as the name in the http upload.
   //! \param[in] write_minidump_to_database Whether the minidump shall be
   //!     written to database.
   //! \param[in] write_minidump_to_log Whether the minidump shall be written to
@@ -67,7 +70,7 @@ class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
       CrashReportDatabase* database,
       CrashReportUploadThread* upload_thread,
       const std::map<std::string, std::string>* process_annotations,
-      const std::vector<base::FilePath>* attachments,
+      const std::map<std::string, base::FilePath>* process_attachments,
       bool write_minidump_to_database,
       bool write_minidump_to_log,
       const UserStreamDataSources* user_stream_data_sources);
@@ -109,7 +112,7 @@ class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
   CrashReportDatabase* database_;  // weak
   CrashReportUploadThread* upload_thread_;  // weak
   const std::map<std::string, std::string>* process_annotations_;  // weak
-  const std::vector<base::FilePath>* attachments_;  // weak
+  const std::map<std::string, base::FilePath>* process_attachments_; // weak
   bool write_minidump_to_database_;
   bool write_minidump_to_log_;
   const UserStreamDataSources* user_stream_data_sources_;  // weak

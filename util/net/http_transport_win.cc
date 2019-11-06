@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <versionhelpers.h>
 #include <wchar.h>
 #include <winhttp.h>
 
@@ -136,6 +137,9 @@ class HTTPTransportWin final : public HTTPTransport {
   bool ExecuteSynchronously(std::string* response_body) override;
 
  private:
+
+  static void AddNewTLSOnWindows7(const ScopedHINTERNET& session);
+
   DISALLOW_COPY_AND_ASSIGN(HTTPTransportWin);
 };
 
@@ -165,6 +169,8 @@ bool HTTPTransportWin::ExecuteSynchronously(std::string* response_body) {
     LOG(ERROR) << WinHttpMessage("WinHttpSetTimeouts");
     return false;
   }
+
+  AddNewTLSOnWindows7(session);
 
   URL_COMPONENTS url_components = {0};
   url_components.dwStructSize = sizeof(URL_COMPONENTS);
@@ -404,6 +410,21 @@ bool HTTPTransportWin::ExecuteSynchronously(std::string* response_body) {
   }
 
   return true;
+}
+
+void HTTPTransportWin::AddNewTLSOnWindows7(const ScopedHINTERNET& session)
+{
+  if (IsWindows8Point1OrGreater())
+    return;
+
+  unsigned long secure_protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 |
+                                   WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
+                                   WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+
+  if (!WinHttpSetOption(session.get(), WINHTTP_OPTION_SECURE_PROTOCOLS,
+                        &secure_protocols, sizeof(secure_protocols))) {
+    LOG(ERROR) << WinHttpMessage("WinHttpSetOption");
+  }
 }
 
 }  // namespace

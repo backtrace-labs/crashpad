@@ -94,7 +94,7 @@ namespace crashpad {
 namespace {
 
 #if defined(OS_WIN) || defined(OS_LINUX) || defined(OS_CHROMEOS) || \
-    defined(OS_ANDROID)
+    defined(OS_ANDROID) || defined(OS_MACOSX)
 #define ATTACHMENTS_SUPPORTED 1
 #endif  // OS_WIN || OS_LINUX || OS_CHROMEOS || OS_ANDROID
 

@@ -249,7 +249,7 @@ bool AddKeyValueToMap(std::map<std::string, std::string>* map,
   }
   return true;
 }
-#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX) || defined(OS_MACOSX)
 // Overloaded version, to accept base::FilePath as a VALUE.
 bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
                       const std::string& key_value,
@@ -274,7 +274,7 @@ bool AddKeyValueToMap(std::map<std::string, base::FilePath>* map,
   }
   return true;
 }
-#endif // OS_WIN || OS_FUCHSIA || OS_LINUX
+#endif // OS_WIN || OS_FUCHSIA || OS_LINUX || OS_MACOSX
 
 // Calls Metrics::HandlerLifetimeMilestone, but only on the first call. This is
 // to prevent multiple exit events from inadvertently being recorded, which
@@ -592,9 +592,9 @@ int HandlerMain(int argc,
     kOptionTraceParentWithException,
 #endif
     kOptionURL,
-#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX) || defined(OS_ANDROID)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX) || defined(OS_MACOSX) || defined(OS_ANDROID)
     kOptionAttachment,
-#endif // OS_WIN || OS_FUCHSIA || OS_LINUX
+#endif // OS_WIN || OS_FUCHSIA || OS_LINUX || OS_MACOSX
 #if defined(OS_CHROMEOS)
     kOptionUseCrosCrashReporter,
     kOptionMinidumpDirForTests,
@@ -677,9 +677,9 @@ int HandlerMain(int argc,
      kOptionTraceParentWithException},
 #endif  // OS_LINUX || OS_ANDROID
     {"url", required_argument, nullptr, kOptionURL},
-#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined (OS_LINUX) || defined(OS_MACOSX)
     {"attachment", required_argument, nullptr, kOptionAttachment},
-#endif // OS_WIN || OS_FUCHSIA || OS_LINUX
+#endif // OS_WIN || OS_FUCHSIA || OS_LINUX || OS_MACOSX
 #if defined(OS_CHROMEOS)
     {"use-cros-crash-reporter",
       no_argument,
@@ -847,14 +847,14 @@ int HandlerMain(int argc,
         options.url = optarg;
         break;
       }
-#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX)
+#if defined(OS_WIN) || defined(OS_FUCHSIA) || defined(OS_LINUX) || defined(OS_MACOSX)
       case kOptionAttachment: {
         if (!AddKeyValueToMap(&options.attachments, optarg, "--attachment")) {
           return ExitFailure();
         }
         break;
       }
-#endif // OS_WIN || OS_FUCHSIA || OS_LINUX
+#endif // OS_WIN || OS_FUCHSIA || OS_LINUX || OS_MACOSX
 #if defined(OS_CHROMEOS)
       case kOptionUseCrosCrashReporter: {
         options.use_cros_crash_reporter = true;

@@ -20,6 +20,7 @@
     {
       'target_name': 'crashpad_util',
       'type': 'static_library',
+      'standalone_static_library': 1,
       'dependencies': [
         '../compat/compat.gyp:crashpad_compat',
         '../third_party/mini_chromium/mini_chromium.gyp:base',
@@ -29,6 +30,7 @@
       'defines': [ 'ZLIB_CONST' ],
       'include_dirs': [
         '..',
+        '<!(pwd)/../../../openssl_for_ios_and_android/tools/openssl-1.1.1e/include',
         '<(INTERMEDIATE_DIR)',
       ],
       'sources': [
@@ -417,6 +419,38 @@
               '-llog',
             ],
           },
+          'defines' : [
+            'CRASHPAD_USE_BORINGSSL',
+          ],
+          # Roblox specific location of openssl for different target_arch
+          'conditions': [
+            [ 'target_arch=="arm"', {
+              'link_settings': {
+                'libraries': [
+                  '<!(pwd)/../../../openssl_for_ios_and_android/output/android/openssl-armeabi-v7a/lib/libssl.a',
+                  '<!(pwd)/../../../openssl_for_ios_and_android/output/android/openssl-armeabi-v7a/lib/libcrypto.a',
+                ],
+              },
+            }],
+            [ 'target_arch=="arm64"', {
+              'link_settings': {
+                'libraries': [
+                  '<!(pwd)/../../../openssl_for_ios_and_android/output/android/openssl-arm64-v8a/lib/libssl.a',
+                  '<!(pwd)/../../../openssl_for_ios_and_android/output/android/openssl-arm64-v8a/lib/libcrypto.a',
+                  #'<!(pwd)/../../../openssl/android/arm64/lib/libssl.a',
+                  #'<!(pwd)/../../../openssl/android/arm64/lib/libcrypto.a',
+                ],
+              },
+            }],
+            [ 'target_arch=="x64"', {
+              'link_settings': {
+                'libraries': [
+                  '<!(pwd)/../../../openssl/android/x86_64/lib/libssl.a',
+                  '<!(pwd)/../../../openssl/android/x86_64/lib/libcrypto.a',
+                ],
+              },
+            }],
+          ],
         }],
         ['OS=="linux" or OS=="android"', {
           'sources': [
@@ -437,6 +471,9 @@
       ],
       'target_conditions': [
         ['OS=="android"', {
+          'sources' : [
+            'net/http_transport_socket.cc',
+          ],
           'sources/': [
             ['include', '^linux/'],
             ['include', '^misc/capture_context_linux\\.S$'],

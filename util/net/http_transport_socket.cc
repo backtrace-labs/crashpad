@@ -35,7 +35,9 @@
 #include "util/string/split_string.h"
 
 #if defined(CRASHPAD_USE_BORINGSSL)
+#include <cstdio>
 #include <openssl/ssl.h>
+#include "cacert.h"
 #endif
 
 namespace crashpad {
@@ -116,6 +118,26 @@ class SSLStream : public Stream {
     SSL_CTX_set_verify(ctx_.get(), SSL_VERIFY_PEER, nullptr);
     SSL_CTX_set_verify_depth(ctx_.get(), 5);
 
+#if defined(OS_ANDROID)
+      {
+        auto path = root_cert_path.value() + "/backtrace-cacert.pem";
+        LOG(ERROR) << "cert_path:" << path;
+        {
+          FILE* f = fopen(path.c_str(), "w");
+          if (f) {
+            fwrite(backtrace::cacert, 1, sizeof(backtrace::cacert), f);
+            fclose(f);
+          }
+        }
+        if (SSL_CTX_load_verify_locations(
+                ctx_.get(), path.c_str(), nullptr) <= 0) {
+          LOG(ERROR) << "SSL_CTX_load_verify_locations";
+          return false;
+        }
+      }
+#endif // OS_ANDROID
+
+#if !defined(OS_ANDROID)
     if (!root_cert_path.empty()) {
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), root_cert_path.value().c_str(), nullptr) <= 0) {
@@ -135,10 +157,13 @@ class SSLStream : public Stream {
         LOG(ERROR) << "SSL_CTX_load_verify_locations";
         return false;
       }
+#elif defined(OS_ANDROID)
+    // handled above
 #else
 #error cert store location
-#endif
+#endif // OS_LINUX
     }
+#endif // OS_ANDROID
 
     ssl_.reset(SSL_new(ctx_.get()));
     if (!ssl_.is_valid()) {

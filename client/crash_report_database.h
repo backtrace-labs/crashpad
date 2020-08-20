@@ -173,6 +173,12 @@ class CrashReportDatabase {
       return attachment_map_;
     }
 
+#if defined(OS_ANDROID)
+    CrashReportDatabase* GetDatabase() const {
+      return database_;
+    }
+#endif // OS_ANDROID
+
    private:
     friend class CrashReportDatabase;
     friend class CrashReportDatabaseGeneric;
@@ -232,6 +238,10 @@ class CrashReportDatabase {
   };
 
   virtual ~CrashReportDatabase() {}
+
+#if defined(OS_ANDROID)
+  virtual base::FilePath GetPath() const { return {}; }
+#endif // OS_ANDROID
 
   //! \brief Opens a database of crash reports, possibly creating it.
   //!

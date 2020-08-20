@@ -392,6 +392,7 @@ static_library("util") {
     sources += [
       "linux/initial_signal_dispositions.cc",
       "linux/initial_signal_dispositions.h",
+      "net/cacert.h",
     ]
   }
 

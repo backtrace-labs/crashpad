@@ -303,6 +303,17 @@ CrashReportUploadThread::UploadResult CrashReportUploadThread::UploadReport(
   // TODO(mark): The timeout should be configurable by the client.
   http_transport->SetTimeout(60.0);  // 1 minute.
 
+#if defined(OS_ANDROID)
+  if (report->GetDatabase()) {
+    LOG(ERROR) << "database: " << report->GetDatabase();
+    auto path = report->GetDatabase()->GetPath();
+    LOG(ERROR) << "path: " << path.value();
+    http_transport->SetRootCACertificatePath(path);
+  } else {
+    LOG(ERROR) << "No database pointer";
+  }
+#endif // OS_ANDROID
+
   std::string url = url_;
   if (options_.identify_client_via_url) {
     // Add parameters to the URL which identify the client to the server.

@@ -192,6 +192,12 @@ class CrashReportDatabaseGeneric : public CrashReportDatabase {
   bool Initialize(const base::FilePath& path, bool may_create);
 
   // CrashReportDatabase:
+
+#if defined(OS_ANDROID)
+  base::FilePath GetPath() const override {
+    return base_dir_;
+  }
+#endif // OS_ANDROID
   Settings* GetSettings() override;
   OperationStatus PrepareNewCrashReport(
       std::unique_ptr<NewReport>* report) override;

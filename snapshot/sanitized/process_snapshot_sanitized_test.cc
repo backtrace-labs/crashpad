@@ -98,13 +98,12 @@ void ChildTestFunction() {
   static StringAnnotation<32> non_allowed_annotation(kNonAllowedAnnotationName);
   non_allowed_annotation.Set(kNonAllowedAnnotationValue);
 
-  char string_data[strlen(kSensitiveStackData) + 1];
-  strcpy(string_data, kSensitiveStackData);
+  std::string string_data(kSensitiveStackData);
 
   void (*code_pointer)(void) = ChildTestFunction;
 
   ChildTestAddresses addrs = {};
-  addrs.string_address = FromPointerCast<VMAddress>(string_data);
+  addrs.string_address = FromPointerCast<VMAddress>(string_data.c_str());
   addrs.module_address = FromPointerCast<VMAddress>(ChildTestFunction);
   addrs.non_module_address = FromPointerCast<VMAddress>(&addrs);
   addrs.code_pointer_address = FromPointerCast<VMAddress>(&code_pointer);

@@ -445,8 +445,8 @@
             [ 'target_arch=="x64"', {
               'link_settings': {
                 'libraries': [
-                  '<!(pwd)/../../../openssl/android/x86_64/lib/libssl.a',
-                  '<!(pwd)/../../../openssl/android/x86_64/lib/libcrypto.a',
+                  '<!(pwd)/../../../openssl_for_ios_and_android/output/android/openssl-x86_64/lib/libssl.a',
+                  '<!(pwd)/../../../openssl_for_ios_and_android/output/android/openssl-x86_64/lib/libcrypto.a',
                 ],
               },
             }],

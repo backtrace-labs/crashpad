@@ -40,6 +40,10 @@
 
 namespace crashpad {
 
+#if defined(OS_WIN)
+void IgnoreNextException(bool value);
+#endif
+
 //! \brief The primary interface for an application to have Crashpad monitor
 //!     it for crashes.
 class CrashpadClient {

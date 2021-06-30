@@ -94,6 +94,8 @@ base::subtle::AtomicWord g_handler_startup_state;
 // list, so this allows the handler to capture all of them.
 CRITICAL_SECTION g_critical_section_with_debug_info;
 
+CrashpadClient::FirstChanceHandlerWin g_first_chance_handler;
+
 void SetHandlerStartupState(StartupState state) {
   DCHECK(state == StartupState::kSucceeded || state == StartupState::kFailed);
   base::subtle::Release_Store(&g_handler_startup_state,
@@ -159,6 +161,12 @@ LONG WINAPI UnhandledExceptionHandler(EXCEPTION_POINTERS* exception_pointers) {
   // that's blocked at this location.
   if (base::subtle::Barrier_AtomicIncrement(&have_crashed, 1) > 1) {
     SleepEx(INFINITE, false);
+  }
+
+  // If the first chance handler exists and returns true (handled), we finish
+  // the job at this point.
+  if (g_first_chance_handler && g_first_chance_handler(exception_pointers)) {
+    return EXCEPTION_CONTINUE_SEARCH;
   }
 
   // Otherwise, we're the first thread, so record the exception pointer and
@@ -709,6 +717,10 @@ bool CrashpadClient::StartHandler(
   }
 }
 
+void CrashpadClient::SetFirstChanceExceptionHandler(FirstChanceHandlerWin handler) {
+  g_first_chance_handler = handler;
+}
+
 bool CrashpadClient::SetHandlerIPCPipe(const std::wstring& ipc_pipe) {
   DCHECK(ipc_pipe_.empty());
   DCHECK(!ipc_pipe.empty());
@@ -825,6 +837,12 @@ void CrashpadClient::DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer)
   g_non_crash_exception_information.exception_pointers =
       FromPointerCast<WinVMAddress>(&exception_pointers);
 
+  // If the first chance handler exists and returns true (handled), we finish
+  // the job at this point.
+  if (g_first_chance_handler && g_first_chance_handler(&exception_pointers)) {
+    return;
+  }
+
   bool set_event_result = !!SetEvent(g_signal_non_crash_dump);
   PLOG_IF(ERROR, !set_event_result) << "SetEvent";
 
@@ -876,6 +894,13 @@ void CrashpadClient::DumpWithoutCrash(const CONTEXT& context) {
   record.ExceptionAddress = ProgramCounterFromCONTEXT(&context);
 
   exception_pointers.ExceptionRecord = &record;
+
+  // If the first chance handler exists and returns true (handled), we finish
+  // the job at this point.
+  if (g_first_chance_handler && g_first_chance_handler(&exception_pointers)) {
+    return;
+  }
+
 
   g_non_crash_exception_information.thread_id = GetCurrentThreadId();
   g_non_crash_exception_information.exception_pointers =

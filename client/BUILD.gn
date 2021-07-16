@@ -72,7 +72,6 @@ crashpad_static_library("client") {
 
   deps = [
     ":common",
-    "../third_party/mini_chromium:chromeos_buildflags",
   ]
 
   if (crashpad_is_win) {

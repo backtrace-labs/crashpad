@@ -137,8 +137,13 @@ bool ProcessInfo::InitializeWithPtrace(PtraceConnection* connection) {
           while (AdvancePastNumber(&line_c, &group)) {
             supplementary_groups_.insert(group);
             if (!AdvancePastPrefix(&line_c, " ")) {
-              LOG(ERROR) << "format error: unrecognized Groups format";
-              return false;
+              // On some flavors of Android linux (i.e: in Samsung A20), the
+              // Groups: line does NOT have a trailing space. We should allow
+              // this.
+              if (strncmp(line_c, "\n", 1) != 0) {
+                LOG(ERROR) << "format error: unrecognized Groups format";
+                return false;
+              }
             }
           }
         }

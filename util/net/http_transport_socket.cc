@@ -425,6 +425,7 @@ bool WriteRequest(Stream* stream,
                         sizeof(tmp),
                         "%08x",
                         base::checked_cast<unsigned int>(data_bytes));
+      (void)rv;
       DCHECK_EQ(static_cast<size_t>(rv), sizeof(buf.size));
       strncpy(buf.size, tmp, sizeof(buf.size));
       DCHECK_NE(buf.size[sizeof(buf.size) - 1], '\0');

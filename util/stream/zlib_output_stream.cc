@@ -73,7 +73,7 @@ bool ZlibOutputStream::Write(const uint8_t* data, size_t size) {
   if (!initialized_.is_valid())
     return false;
 
-  zlib_stream_.next_in = data;
+  zlib_stream_.next_in = const_cast<uint8_t*>(data);
   zlib_stream_.avail_in = base::saturated_cast<uInt>(size);
   flush_needed_ = false;
   while (zlib_stream_.avail_in > 0) {

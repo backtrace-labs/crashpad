@@ -188,9 +188,15 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
 
     CloseMultipleNowOrOnExec(STDERR_FILENO + 1, preserve_fd);
 
+#if BUILDFLAG(IS_ANDROID) && __ANDROID_API__ < 21
+    execve(argv_for_spawn[0], argv_for_spawn, envp_for_spawn);
+    PLOG(FATAL) << ("execve");
+#else
     auto execve_fp = use_path ? execvpe : execve;
     execve_fp(argv_for_spawn[0], argv_for_spawn, envp_for_spawn);
     PLOG(FATAL) << (use_path ? "execvpe" : "execve");
+#endif
+
 #else
 #if BUILDFLAG(IS_APPLE)
     PosixSpawnAttr attr;

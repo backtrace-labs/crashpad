@@ -46,6 +46,7 @@ namespace crashpad {
 //!     if no additional file descriptors are to be inherited.
 //! \param[in] use_path Whether to consult the `PATH` environment variable when
 //!     requested to start an executable at a non-absolute path.
+//!     IGNORED FOR ANDROID WITH API LEVEL < 21
 //! \param[in] child_function If not `nullptr`, this function will be called in
 //!     the intermediate child process. Take note that this function will run in
 //!     the context of a forked process, and must be safe for that purpose.

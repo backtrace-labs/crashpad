@@ -33,7 +33,7 @@
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
+#include "build/buildflag.h"
 #include "client/client_argv_handling.h"
 #include "third_party/lss/lss.h"
 #include "util/file/file_io.h"

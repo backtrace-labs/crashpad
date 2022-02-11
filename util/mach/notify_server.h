@@ -15,6 +15,7 @@
 #ifndef CRASHPAD_UTIL_MACH_NOTIFY_SERVER_H_
 #define CRASHPAD_UTIL_MACH_NOTIFY_SERVER_H_
 
+#include <mach/notify.h>
 #include <mach/mach.h>
 
 #include <set>

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <mach/notify.h>
+
+::notify_port_t huj;
+
 #include "util/mach/notify_server.h"
 
 #include "base/cxx17_backports.h"

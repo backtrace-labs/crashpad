@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <linux/futex.h>
+// #include <linux/signal.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -33,7 +34,7 @@
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
+#include "build/buildflag.h"
 #include "client/client_argv_handling.h"
 #include "third_party/lss/lss.h"
 #include "util/file/file_io.h"
@@ -48,6 +49,12 @@
 #include "util/posix/double_fork_and_exec.h"
 #include "util/posix/scoped_mmap.h"
 #include "util/posix/signals.h"
+
+// TODOKQ - FIX
+// Missing from glibc and bionic
+#if !defined(SS_AUTODISARM)
+#define SS_AUTODISARM (1u << 31)
+#endif
 
 namespace crashpad {
 

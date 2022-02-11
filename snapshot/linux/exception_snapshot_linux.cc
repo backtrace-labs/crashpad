@@ -15,6 +15,8 @@
 #include "snapshot/linux/exception_snapshot_linux.h"
 
 #include <signal.h>
+// TODOKQ remove?
+#include <linux/signal.h>
 
 #include "base/logging.h"
 #include "snapshot/linux/capture_memory_delegate_linux.h"

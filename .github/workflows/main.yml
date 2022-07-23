@@ -55,7 +55,6 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: git mingw-w64-x86_64-toolchain && pacman --sync --noconfirm --needed libcurl-devel
 
       - name: CMake
         run: mkdir cbuild && cd cbuild && cmake .. && make -j && cd ..

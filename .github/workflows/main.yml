@@ -104,10 +104,8 @@ jobs:
       ANDROID_TAG: google_apis
       ADB_INSTALL_TIMEOUT: 20
       # note that you will have to adjust those paths to your installation
-      SDK_HOME: /home/backtrace/code/android/sdk
-      PATH: ${SDK_HOME}/cmake/3.18.1/bin/:$PATH
-      CMAKE: ${SDK_HOME}/cmake/3.18.1/bin/cmake
-      ANDROID_HOME: ${SDK_HOME}
+      #SDK_HOME: /home/backtrace/code/android/sdk
+      #ANDROID_HOME: ${SDK_HOME}
       NDK_VERSION: 21.4.7075529
       NDK: ${ANDROID_HOME}/ndk/${NDK_VERSION}
       TOOLCHAIN: ${SDK_HOME}/ndk/${NDK_VERSION}/build/cmake/android.toolchain.cmake
@@ -133,6 +131,7 @@ jobs:
           ndk: 21.4.7075529
           arch: x86_64
           script: |
+            set
             # make a build directory (note: build is already used by Crashpad)
             mkdir -p cbuild && cd cbuild
             # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)

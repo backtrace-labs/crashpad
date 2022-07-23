@@ -32,7 +32,7 @@ jobs:
           #persist-credentials: false
           
       - name: Install curl
-        run: apk add curl
+        run: sudo apt-get install -y curl
 
       - name: CMake
         run: mkdir cbuild && cd cbuild && cmake .. && make -j

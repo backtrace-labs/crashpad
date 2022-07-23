@@ -30,6 +30,10 @@ jobs:
           submodules: recursive
           #token: ${{ secrets.ACCESS_TOKEN }}
           #persist-credentials: false
+          
+      - name: Install curl
+        run: apk add curl
+
       - name: CMake
         run: mkdir cbuild && cd cbuild && cmake .. && make -j
 

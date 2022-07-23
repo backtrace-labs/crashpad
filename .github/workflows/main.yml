@@ -62,9 +62,9 @@ jobs:
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
           cmake -G "Visual Studio 16 2019" ..
+          #  -DCURL_LIBRARY=/usr/lib/ -DCURL_INCLUDE_DIR=/usr/include/curl/ 
           cmake --build .
           cd ..
-          # mkdir cbuild && cd cbuild && cmake -DCURL_LIBRARY=/usr/lib/ -DCURL_INCLUDE_DIR=/usr/include/curl/ .. && make -j && cd ..
         
       - name: Tar files to preserve file permissions
         run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz cbuild/
@@ -117,7 +117,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Test
+      - name: CMake
         uses: reactivecircus/android-emulator-runner@v2
         with:
           target: ${{ env.ANDROID_TAG }}

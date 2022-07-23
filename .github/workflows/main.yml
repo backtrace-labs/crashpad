@@ -56,7 +56,14 @@ jobs:
          cyg-get -debug curl libcurl-devel
 
       - name: CMake
-        run: mkdir cbuild && cd cbuild && cmake -DCURL_LIBRARY=/usr/lib/ -DCURL_INCLUDE_DIR=/usr/include/curl/ .. && make -j && cd ..
+        run: |
+          # make a build directory (note: build is already used by Crashpad)
+          mkdir -p cbuild && cd cbuild
+          # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
+          # it is recommended to specify the compiler version used for the build
+          cmake -G "Visual Studio 16 2019" ..
+          cmake --build .
+          # mkdir cbuild && cd cbuild && cmake -DCURL_LIBRARY=/usr/lib/ -DCURL_INCLUDE_DIR=/usr/include/curl/ .. && make -j && cd ..
         
       - name: Tar files to preserve file permissions
         run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz cbuild/

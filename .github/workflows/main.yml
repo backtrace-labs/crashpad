@@ -58,7 +58,16 @@ jobs:
           install: git mingw-w64-x86_64-toolchain && pacman -S libcurl-devel --noconfirm
 
       - name: CMake
-        run: mkdir cbuild && cd cbuild && cmake .. && make -j
+        run: mkdir cbuild && cd cbuild && cmake .. && make -j && cd ..
+        
+      - name: Tar files to preserve file permissions
+        run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz cbuild/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Archive_Crashpad_Windows_build_${{ github.ref_name }}
+          path: Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz
+
   
   build-macos:
     runs-on: macos-latest
@@ -71,4 +80,13 @@ jobs:
           submodules: recursive
 
       - name: CMake
-        run: mkdir cbuild && cd cbuild && cmake .. && make -j
+        run: mkdir cbuild && cd cbuild && cmake .. && make -j && cd ..
+        
+      - name: Tar files to preserve file permissions
+        run: tar -cvzf Archive_Crashpad_MacOs_build_${{ github.ref_name }}.tar.gz cbuild/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Archive_Crashpad_MacOs_build_${{ github.ref_name }}
+          path: Archive_Crashpad_MacOs_build_${{ github.ref_name }}.tar.gz
+

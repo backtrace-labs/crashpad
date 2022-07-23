@@ -23,13 +23,17 @@ jobs:
       - uses: lukka/get-cmake@latest
       # Or pin to a specific CMake version:
       # lukka/get-cmake@v3.21.2
+      
+      - uses: actions/checkout@v2
+      - name: CMake
+        run: mkdir cbuild && cd cbuild && cmake .. && make -j
 
       # Restore from cache the previously built ports. If a "cache miss" occurs,
       # then vcpkg is bootstrapped. Since a the vcpkg.json is being used later on
       # to install the packages when `run-cmake` runs, no packages are installed at
       # this time.
-      - name: Restore artifacts, or setup vcpkg (do not install any package)
-        uses: lukka/run-vcpkg@v10 # Always specify the specific _version_ of the 
+      #- name: Restore artifacts, or setup vcpkg (do not install any package)
+      #  uses: lukka/run-vcpkg@v10 # Always specify the specific _version_ of the 
                                   # action you need, `v10` in this case to stay up
                                   # to date with fixes on v10 branch.
         #with:
@@ -64,10 +68,10 @@ jobs:
           # This is the name of the CMakePresets.json's configuration to use to generate
           # the project files. This configuration leverages the vcpkg.cmake toolchain file to
           # run vcpkg and install all dependencies specified in vcpkg.json.
-          configurePreset: 'ninja-multi-vcpkg'
+          #configurePreset: 'ninja-multi-vcpkg'
 
           # This is the name of the CMakePresets.json's configuration to build the project.
-          buildPreset: 'ninja-multi-vcpkg'
+          #buildPreset: 'ninja-multi-vcpkg'
     
     #env:
     #  VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }} # [OPTIONAL] Define the vcpkg's triplet 

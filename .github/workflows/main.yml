@@ -1,0 +1,74 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "backtrace" branch
+  push:
+    branches: [ "cmake-temp" ]
+  pull_request:
+    branches: [ "cmake-temp" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    steps:
+      #-uses: actions/cache@v1   <===== YOU DO NOT NEED THIS!
+
+      # Install latest CMake.
+      - uses: lukka/get-cmake@latest
+      # Or pin to a specific CMake version:
+      # lukka/get-cmake@v3.21.2
+
+      # Restore from cache the previously built ports. If a "cache miss" occurs,
+      # then vcpkg is bootstrapped. Since a the vcpkg.json is being used later on
+      # to install the packages when `run-cmake` runs, no packages are installed at
+      # this time.
+      - name: Restore artifacts, or setup vcpkg (do not install any package)
+        uses: lukka/run-vcpkg@v10 # Always specify the specific _version_ of the 
+                                  # action you need, `v10` in this case to stay up
+                                  # to date with fixes on v10 branch.
+        #with:
+          # This is the default location of the directory containing vcpkg sources.
+          # Change it to the right location if needed.
+          # vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+
+          # If not using a submodule for vcpkg sources, this specifies which commit
+          # id must be checkout from a Git repo. It must not set if using a submodule
+          # for vcpkg.
+          # vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
+
+          # This is the glob expression used to locate the vpkg.json and add its
+          # hash to the cache key. Change it to match a single manifest file you want
+          # to use.
+          # vcpkgJsonGlob: '**/vcpkg.json'
+
+          # This is needed to run `vcpkg install` command (after vcpkg is built) in
+          # the directory where vcpkg.json has been located. Default is false,
+          # It is highly suggested to let `run-cmake` to run vcpkg (i.e. `false`)
+          # (i.e. let CMake run `vcpkg install`) using the vcpkg.cmake toolchain.
+          # runVcpkgInstall: true
+
+      - name: Run CMake consuming CMakePresets.json and vcpkg.json by mean of vcpkg.
+        uses: lukka/run-cmake@v10
+        with:
+          # This is the default path to the CMakeLists.txt along side the
+          # CMakePresets.json. Change if you need have CMakeLists.txt and CMakePresets.json
+          # located elsewhere.
+          # cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+
+          # This is the name of the CMakePresets.json's configuration to use to generate
+          # the project files. This configuration leverages the vcpkg.cmake toolchain file to
+          # run vcpkg and install all dependencies specified in vcpkg.json.
+          configurePreset: 'ninja-multi-vcpkg'
+
+          # This is the name of the CMakePresets.json's configuration to build the project.
+          buildPreset: 'ninja-multi-vcpkg'
+    
+    #env:
+    #  VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }} # [OPTIONAL] Define the vcpkg's triplet 
+    # you want to enforce, otherwise the default one for the hosting system will be 
+    # automatically choosen (x64 is the default on all platforms,  e.g. x64-osx).

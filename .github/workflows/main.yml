@@ -53,9 +53,7 @@ jobs:
         run: |
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get curl libcurl-devel
-         ls -lsa /usr/lib
-         ls -lsa /usr/include/curl/
+         cyg-get -debug curl libcurl-devel
 
       - name: CMake
         run: mkdir cbuild && cd cbuild && cmake -DCURL_LIBRARY=/usr/lib/ -DCURL_INCLUDE_DIR=/usr/include/curl/ .. && make -j && cd ..

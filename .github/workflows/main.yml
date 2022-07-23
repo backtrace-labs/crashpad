@@ -57,9 +57,9 @@ jobs:
           # (i.e. let CMake run `vcpkg install`) using the vcpkg.cmake toolchain.
           # runVcpkgInstall: true
 
-      - name: Run CMake consuming CMakePresets.json and vcpkg.json by mean of vcpkg.
-        uses: lukka/run-cmake@v10
-        with:
+      #- name: Run CMake consuming CMakePresets.json and vcpkg.json by mean of vcpkg.
+      #  uses: lukka/run-cmake@v10
+      #  with:
           # This is the default path to the CMakeLists.txt along side the
           # CMakePresets.json. Change if you need have CMakeLists.txt and CMakePresets.json
           # located elsewhere.

@@ -15,6 +15,7 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     steps:
       #-uses: actions/cache@v1   <===== YOU DO NOT NEED THIS!
 

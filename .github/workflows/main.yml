@@ -49,12 +49,11 @@ jobs:
           submodules: recursive
 
       - name: Install curl (windows)
-        #if: matrix.os == 'windows-latest'
-        id: install-curl
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
+       #if: matrix.os == 'windows-latest'
+        run: |
+         choco install -y cygwin
+         choco install -y cyg-get
+         cyg-get curl libcurl-devel
 
       - name: CMake
         run: mkdir cbuild && cd cbuild && cmake .. && make -j && cd ..

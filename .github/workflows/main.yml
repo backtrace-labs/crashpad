@@ -48,5 +48,27 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install curl (windows)
+        #if: matrix.os == 'windows-latest'
+        id: install-curl
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: git mingw-w64-x86_64-toolchain && pacman -S libcurl-devel --noconfirm
+
+      - name: CMake
+        run: mkdir cbuild && cd cbuild && cmake .. && make -j
+  
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      # Install latest CMake.
+      - uses: lukka/get-cmake@latest
+      
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
       - name: CMake
         run: mkdir cbuild && cd cbuild && cmake .. && make -j

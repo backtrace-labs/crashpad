@@ -55,8 +55,7 @@ jobs:
          choco install -y cyg-get
          cyg-get -debug libcurl-devel findutils
          refreshenv
-         find.exe /usr -name "curl.h" || find.exe / -name "curl.h" || true
-         /usr/bin/find.exe /usr -name "curl.h" || /usr/bin/find.exe / -name "curl.h" || true
+         c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.h" || true
 
       - name: CMake
         run: |
@@ -106,7 +105,7 @@ jobs:
       ANDROID_BUILD_TOOLS_VERSION: 28.0.3
       ANDROID_TAG: google_apis
       ADB_INSTALL_TIMEOUT: 20
-      NDK_VERSION: 21.4.7075529
+      #NDK_VERSION: 21.4.7075529
       # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
       ABI: x86_64
     
@@ -128,23 +127,11 @@ jobs:
           #ndk: ${{ env.NDK_VERSION }}
           arch: ${{ env.ABI }}
           script: >
-            #export NDK=${{ env.ANDROID_NDK_HOME}}/ndk/${{ env.NDK_VERSION }}
-            #export NDK=${{ env.ANDROID_NDK_LATEST_HOME }}
-            export TOOLCHAIN=${{ env.ANDROID_NDK_LATEST_HOME }}/build/cmake/android.toolchain.cmake
-            #export TOOLCHAIN=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}/build/cmake/android.toolchain.cmake
-            export GTEST=${{ env.ANDROID_NDK_LATEST_HOME }}/sources/third_party/googletest
-            export
-            
             # make a build directory (note: build is already used by Crashpad)
             mkdir -p cbuild && cd cbuild
             
             # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
-            cmake -DANDROID_ABI=${{ env.ABI }} \
-                  -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} \
-                  -DCMAKE_TOOLCHAIN_FILE=${{ env.ANDROID_NDK_LATEST_HOME }}/build/cmake/android.toolchain.cmake
-                  -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} \
-                  -DANDROID_TOOLCHAIN=clang \
-                  ..
+            cmake -DANDROID_ABI=${{ env.ABI }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DCMAKE_TOOLCHAIN_FILE=${{ env.ANDROID_NDK_LATEST_HOME }}/build/cmake/android.toolchain.cmake -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang ..
             
             # build
             make -j

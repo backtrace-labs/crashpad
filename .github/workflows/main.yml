@@ -51,15 +51,12 @@ jobs:
       - name: Install curl (windows)
        #if: matrix.os == 'windows-latest'
         run: |
+         find / -name "curl.h" || true
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get which
-         which curl
-         cyg-get -debug curl libcurl-devel which
-         which curl
+         cyg-get -debug libcurl-devel
          refreshenv
-         which curl
-         /usr/bin/find / -name "curl.h"
+         find / -name "curl.h" || true
 
       - name: CMake
         run: |

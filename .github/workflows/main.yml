@@ -116,7 +116,7 @@ jobs:
     
     strategy:
       matrix:
-          abi: [armeabi-v7a, arm64-v8a, x86_64]
+        abi: [armeabi-v7a, arm64-v8a, x86_64]
 
     steps:
       - name: Checkout submodules
@@ -165,9 +165,9 @@ jobs:
 #             cmake --build cbuild/
 
       - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
+        run: tar -cvzf Archive_Crashpad_Android_build_${{ matrix.abi }}_${{ github.ref_name }}.tar.gz cbuild/
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Archive_Crashpad_Android_build_${{ github.ref_name }}
-          path: Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz 
+          name: Archive_Crashpad_Android_build_${{ matrix.abi }}_${{ github.ref_name }}
+          path: Archive_Crashpad_Android_build_${{ matrix.abi }}_${{ github.ref_name }}.tar.gz 

@@ -134,7 +134,7 @@ jobs:
           cmake --build cbuild/
 
       - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_Android_apiLevel_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.ref_name }}.tar.gz cbuild/
+        run: tar -cvzf Archive_Crashpad_Android_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.ref_name }}.tar.gz cbuild/
 
       - uses: actions/upload-artifact@v3
         with:

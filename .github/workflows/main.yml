@@ -53,8 +53,13 @@ jobs:
         run: |
          choco install -y cygwin
          choco install -y cyg-get
+         cyg-get which
+         which curl
          cyg-get -debug curl libcurl-devel which
          which curl
+         refreshenv
+         which curl
+         /usr/bin/find / -name "curl.h"
 
       - name: CMake
         run: |

@@ -116,7 +116,7 @@ jobs:
     
     strategy:
       matrix:
-          abi: [armeabi-v7a, arm64-v8a, x86_64, x86]
+          abi: [armeabi-v7a, arm64-v8a, x86_64]
 
     steps:
       - name: Checkout submodules

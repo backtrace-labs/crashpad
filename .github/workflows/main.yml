@@ -53,9 +53,9 @@ jobs:
         run: |
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get -debug libcurl-devel findutils
+         cyg-get -debug curl libcurl-devel findutils
          refreshenv
-         c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.h" || true
+         c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.*" || true
 
       - name: CMake
         run: |
@@ -63,8 +63,7 @@ jobs:
           mkdir -p cbuild && cd cbuild
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          cmake -G "Visual Studio 16 2019" ..
-          #  -DCURL_LIBRARY=/usr/lib/ -DCURL_INCLUDE_DIR=/usr/include/curl/ 
+          cmake -DCURL_INCLUDE_DIR=c:\tools\cygwin\usr\include\curl\ -DCURL_LIBRARY=c:\tools\cygwin\usr\bin\ -G "Visual Studio 16 2019" ..
           cmake --build .
           cd ..
         
@@ -126,7 +125,7 @@ jobs:
           api-level: ${{ env.ANDROID_API_LEVEL }}
           #ndk: ${{ env.NDK_VERSION }}
           arch: ${{ env.ABI }}
-          script: >
+          script: |
             # make a build directory (note: build is already used by Crashpad)
             mkdir -p cbuild && cd cbuild
             

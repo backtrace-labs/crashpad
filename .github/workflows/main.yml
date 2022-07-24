@@ -51,12 +51,11 @@ jobs:
       - name: Install curl (windows)
        #if: matrix.os == 'windows-latest'
         run: |
-         find / -name "curl.h" || true
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get -debug libcurl-devel
+         cyg-get -debug libcurl-devel findutils
          refreshenv
-         find / -name "curl.h" || true
+         /usr/bin/find /usr -name "curl.h" || /usr/bin/find / -name "curl.h" || true
 
       - name: CMake
         run: |
@@ -108,7 +107,7 @@ jobs:
       ADB_INSTALL_TIMEOUT: 20
       NDK_VERSION: 21.4.7075529
       # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
-      ABI: arm64-v8a
+      ABI: x86_64
     
     runs-on: macos-latest # necessary for reactivecircus/android-emulator-runner@v2
 
@@ -125,11 +124,13 @@ jobs:
         with:
           target: ${{ env.ANDROID_TAG }}
           api-level: ${{ env.ANDROID_API_LEVEL }}
-          ndk: ${{ env.NDK_VERSION }}
+          #ndk: ${{ env.NDK_VERSION }}
           arch: ${{ env.ABI }}
           script: |
-            export NDK=${ANDROID_NDK_HOME}/ndk/${NDK_VERSION}
-            export TOOLCHAIN=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}/build/cmake/android.toolchain.cmake
+            #export NDK=${ANDROID_NDK_HOME}/ndk/${NDK_VERSION}
+            export NDK=${ANDROID_NDK_LATEST_HOME}
+            export TOOLCHAIN=${NDK}/build/cmake/android.toolchain.cmake
+            #export TOOLCHAIN=${ANDROID_SDK_ROOT}/ndk/${NDK_VERSION}/build/cmake/android.toolchain.cmake
             export GTEST=${NDK}/sources/third_party/googletest
             export
             

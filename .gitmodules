@@ -13,3 +13,6 @@
 [submodule "third_party/lss/lss"]
 	path = third_party/lss/lss
 	url = https://chromium.googlesource.com/linux-syscall-support.git
+[submodule "third_party/openssl-android-binary"]
+	path = third_party/openssl-android-binary
+	url = git@github.com:KrzaQ/openssl-android-binary.git

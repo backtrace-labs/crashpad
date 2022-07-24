@@ -21,12 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
-        abi: [armeabi-v7a, arm64-v8a, x86_64]
+        abi: [armeabi-v7a]
         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
-        apiLevel: [21, 32]
-        include:
-          - apiLevel: 16
-            abi: armeabi-v7a
+        apiLevel: [16]
 
     steps:
       # Install latest CMake.
@@ -42,6 +39,7 @@ jobs:
       - name: CMake
         run: |
           env
+          ls -lsa /usr/local/lib/android/sdk/ndk
           #mkdir cbuild 
           #cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
           #cmake --build cbuild/

@@ -53,7 +53,7 @@ jobs:
         run: |
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get -debug curl libcurl-devel findutils
+         cyg-get -debug libcurl-devel findutils
          refreshenv
          c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.*" || true
 
@@ -63,17 +63,17 @@ jobs:
           mkdir -p cbuild && cd cbuild
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          cmake -DCURL_INCLUDE_DIR=c:\tools\cygwin\usr\include\curl\ -DCURL_LIBRARY=c:\tools\cygwin\usr\bin\ -G "Visual Studio 16 2019" ..
+          cmake -DCURL_INCLUDE_DIR=c:\tools\cygwin\usr\include\curl\ -G "Visual Studio 16 2019" ..
           cmake --build .
           cd ..
         
-      - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz cbuild/
+      #- name: Tar files to preserve file permissions
+      #  run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz cbuild/
 
       - uses: actions/upload-artifact@v3
         with:
           name: Archive_Crashpad_Windows_build_${{ github.ref_name }}
-          path: Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz
+          path: cbuild/
 
   
   build-macos:
@@ -130,17 +130,18 @@ jobs:
             mkdir -p cbuild && cd cbuild
             
             # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
-            cmake -DANDROID_ABI=${{ env.ABI }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DCMAKE_TOOLCHAIN_FILE=${{ env.ANDROID_NDK_LATEST_HOME }}/build/cmake/android.toolchain.cmake -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang ..
+            # -DCMAKE_TOOLCHAIN_FILE=${{ env.ANDROID_NDK_LATEST_HOME }}/build/cmake/android.toolchain.cmake
+            cmake -DANDROID_ABI=${{ env.ABI }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang ..
             
             # build
             make -j
             
             cd ..
         
-      - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
+      #- name: Tar files to preserve file permissions
+      #  run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
 
       - uses: actions/upload-artifact@v3
         with:
           name: Archive_Crashpad_Android_build_${{ github.ref_name }}
-          path: Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz
+          path: Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz 

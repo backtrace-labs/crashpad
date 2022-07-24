@@ -111,8 +111,6 @@ jobs:
     runs-on: macos-latest # necessary for reactivecircus/android-emulator-runner@v2
 
     steps:
-      - uses: actions/checkout@v2
-
       - name: Checkout submodules
         uses: actions/checkout@v2
         with:
@@ -127,7 +125,7 @@ jobs:
           arch: ${{ env.ABI }}
           script: |
             # make a build directory (note: build is already used by Crashpad)
-            mkdir -p cbuild
+            mkdir cbuild
             cd cbuild
             
             # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)

@@ -126,6 +126,7 @@ jobs:
           script: |
             pwd
             ls -lsa
+            which cmake
             
             # make a build directory (note: build is already used by Crashpad)
             mkdir cbuild

@@ -24,7 +24,7 @@ jobs:
         abi: [armeabi-v7a]
         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
         apiLevel: [16]
-        ndk: 21.4.7075529
+        ndk: [21.4.7075529]
 
     steps:
       # Install latest CMake.

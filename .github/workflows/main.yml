@@ -53,7 +53,8 @@ jobs:
         run: |
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get -debug curl libcurl-devel
+         cyg-get -debug curl libcurl-devel which
+         which curl
 
       - name: CMake
         run: |
@@ -140,3 +141,11 @@ jobs:
             make -j
             
             cd ..
+        
+      - name: Tar files to preserve file permissions
+        run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Archive_Crashpad_Android_build_${{ github.ref_name }}
+          path: Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz

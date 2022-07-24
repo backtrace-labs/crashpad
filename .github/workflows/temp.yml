@@ -39,7 +39,6 @@ jobs:
       - name: CMake
         run: |
           env
-          ls -lsa /usr/local/lib/android/sdk/ndk
-          #mkdir cbuild 
-          #cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
-          #cmake --build cbuild/
+          mkdir cbuild 
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=/usr/local/lib/android/sdk/ndk/21.4.7075529/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
+          cmake --build cbuild/

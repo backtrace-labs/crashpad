@@ -109,10 +109,14 @@ jobs:
       ADB_INSTALL_TIMEOUT: 20
       #NDK_VERSION: 21.4.7075529
       # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
-      ABI: x86_64
+      #ABI: x86_64
     
     #runs-on: macos-latest # necessary for reactivecircus/android-emulator-runner@v2
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+          abi: [armeabi-v7a, arm64-v8a, x86_64, x86]
 
     steps:
       - name: Checkout submodules
@@ -133,7 +137,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild 
-          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ env.ABI }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang
           cmake --build cbuild/
 
 #       - name: CMake

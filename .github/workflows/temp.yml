@@ -24,6 +24,7 @@ jobs:
         abi: [armeabi-v7a]
         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
         apiLevel: [16]
+        ndk: 21.4.7075529
 
     steps:
       # Install latest CMake.
@@ -39,6 +40,7 @@ jobs:
       - name: CMake
         run: |
           env
+          ls -lsa $ANDROID_HOME/ndk/
           mkdir cbuild 
-          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=/usr/local/lib/android/sdk/ndk/21.4.7075529/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
-          cmake --build cbuild/
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
+          cmake --build cbuild/ 

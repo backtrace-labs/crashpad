@@ -129,19 +129,16 @@ jobs:
             
             # make a build directory (note: build is already used by Crashpad)
             mkdir cbuild
-            cd cbuild
-            
-            ls -lsa
-            
+            # for whatever reason a simple cd doesn't work here - weird
+            # cd cbuild
+
             # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
             # -DCMAKE_TOOLCHAIN_FILE=${{ env.ANDROID_NDK_LATEST_HOME }}/build/cmake/android.toolchain.cmake
-            cmake -S .. -DANDROID_ABI=${{ env.ABI }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang
+            cmake -S . -B cbuild/ -DANDROID_ABI=${{ env.ABI }} -DANDROID_PLATFORM=${{ env.ANDROID_API_LEVEL }} -DANDROID_NATIVE_API_LEVEL=${{ env.ANDROID_API_LEVEL }} -DANDROID_TOOLCHAIN=clang
             
             # build
-            make -j
-            
-            cd ..
-        
+            cmake --build cbuild/
+
       #- name: Tar files to preserve file permissions
       #  run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
 

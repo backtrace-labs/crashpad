@@ -56,8 +56,9 @@ jobs:
         run: |
          choco install -y cygwin
          choco install -y cyg-get
-         cyg-get -debug curl libcurl-devel findutils
+         cyg-get -debug curl libcurl-devel findutils tar
          refreshenv
+         which tar
          c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.*" || true
 
       - name: CMake
@@ -90,7 +91,10 @@ jobs:
           submodules: recursive
 
       - name: CMake
-        run: mkdir cbuild && cd cbuild && cmake .. && make -j && cd ..
+        run: | 
+          mkdir cbuild
+          cmake -S . -B cbuild/ 
+          cmake --build cbuild/
         
       - name: Tar files to preserve file permissions
         run: tar -cvzf Archive_Crashpad_MacOs_build_${{ github.ref_name }}.tar.gz cbuild/
@@ -112,11 +116,6 @@ jobs:
         apiLevel: [21, 32]
 
     steps:
-      - name: Checkout submodules
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
       

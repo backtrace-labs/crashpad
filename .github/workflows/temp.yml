@@ -44,9 +44,8 @@ jobs:
 
       - name: CMake
         run: |
-          env
-          echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null
-          ls -lsa $ANDROID_HOME/ndk/
+          echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
+          ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
           mkdir cbuild 
           cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
           cmake --build cbuild/ 

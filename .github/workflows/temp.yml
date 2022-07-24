@@ -24,7 +24,7 @@ jobs:
         abi: [armeabi-v7a]
         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
         apiLevel: [16]
-        ndk: [21.4.7075529]
+        ndk: [16.1.4479499] # available on GitHub Actions host (as of 7/24/22): 21.4.7075529 23.2.8568313 24.0.8215888
 
     steps:
       # Install latest CMake.
@@ -36,10 +36,11 @@ jobs:
           
       - name: Install curl headers
         run: sudo apt-get install -y libcurl4-openssl-dev
-
+        
       - name: CMake
         run: |
           env
+          echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT}
           ls -lsa $ANDROID_HOME/ndk/
           mkdir cbuild 
           cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang

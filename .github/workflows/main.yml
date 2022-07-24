@@ -139,8 +139,8 @@ jobs:
             # build
             cmake --build cbuild/
 
-      #- name: Tar files to preserve file permissions
-      #  run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
+      - name: Tar files to preserve file permissions
+        run: tar -cvzf Archive_Crashpad_Android_build_${{ github.ref_name }}.tar.gz cbuild/
 
       - uses: actions/upload-artifact@v3
         with:

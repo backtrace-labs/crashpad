@@ -250,6 +250,25 @@ void ExceptionHandlerServer::SetPtraceStrategyDecider(
     std::unique_ptr<PtraceStrategyDecider> decider) {
   strategy_decider_ = std::move(decider);
 }
+  
+#if defined __ANDROID__ && __ANDROID_API__ >= 21
+#elif defined __ANDROID__
+namespace {
+static int epoll_create1(int flags) {
+  int fd = epoll_create(0);
+  if (fd == -1)
+    return fd;
+  if (flags == O_CLOEXEC) {
+    int ret = fnctl(fd, F_SETFL, FD_CLOEXEC);
+    if (ret == -1) {
+      close(fd);
+      return -1;
+    }
+  }
+  return fd;
+}
+}
+#endif
 
 bool ExceptionHandlerServer::InitializeWithClient(ScopedFileHandle sock,
                                                   bool multiple_clients) {

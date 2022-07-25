@@ -42,6 +42,7 @@ jobs:
           path: Archive_Crashpad_Linux_build_${{ github.ref_name }}.tar.gz
 
   build-windows:
+    # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner
     runs-on: windows-2019
     steps:
       # Install latest CMake.
@@ -51,15 +52,15 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install curl (windows)
-       #if: matrix.os == 'windows-latest'
-        run: |
-         choco install -y cygwin
-         choco install -y cyg-get
-         cyg-get -debug curl libcurl-devel findutils tar
-         refreshenv
-         which tar
-         c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.*" || true
+#       - name: Install curl (windows)
+#        #if: matrix.os == 'windows-latest'
+#         run: |
+#          choco install -y cygwin
+#          choco install -y cyg-get
+#          cyg-get -debug curl libcurl-devel findutils tar
+#          refreshenv
+#          which tar
+#          c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.*" || true
 
       - name: CMake
         run: |
@@ -68,7 +69,8 @@ jobs:
           
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          cmake -S . -B cbuild/ -DCURL_INCLUDE_DIR=c:\tools\cygwin\usr\include\curl\ -DCURL_LIBRARY=c:\tools\cygwin\bin\ -G "Visual Studio 16 2019"
+          # -DCURL_INCLUDE_DIR=c:\tools\cygwin\usr\include\curl\ -DCURL_LIBRARY=c:\tools\cygwin\bin\
+          cmake -S . -B cbuild/  -G "Visual Studio 16 2019"
           cmake --build cbuild/
         
       #- name: Tar files to preserve file permissions

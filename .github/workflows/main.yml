@@ -50,16 +50,6 @@ jobs:
         with:
           submodules: recursive
 
-#       - name: Install curl (windows)
-#        #if: matrix.os == 'windows-latest'
-#         run: |
-#          choco install -y cygwin
-#          choco install -y cyg-get
-#          cyg-get -debug curl libcurl-devel findutils tar
-#          refreshenv
-#          which tar
-#          c:\tools\cygwin\bin\find.exe c:\tools\cygwin\ -name "curl.*" || true
-
       - name: CMake
         run: |
           # make a build directory (note: build is already used by Crashpad)
@@ -67,7 +57,6 @@ jobs:
           
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          # -DCURL_INCLUDE_DIR=c:\tools\cygwin\usr\include\curl\ -DCURL_LIBRARY=c:\tools\cygwin\bin\
           cmake -S . -B cbuild/  -G "Visual Studio 16 2019"
           cmake --build cbuild/
         
@@ -128,8 +117,8 @@ jobs:
           submodules: recursive
 
       - name: Install NDK (optional)
-        # available on GitHub Actions host (as of 7/24/22) listed in the array below
-        if: "!contains(fromJson(['21.4.7075529', '23.2.8568313', '24.0.8215888']), ${{ matrix.ndk }} )"
+        # available on GitHub Actions host (as of 7/24/22) listed below
+        if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
         run: |
           echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
           #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms

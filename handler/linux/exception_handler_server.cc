@@ -15,6 +15,7 @@
 #include "handler/linux/exception_handler_server.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <linux/capability.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>

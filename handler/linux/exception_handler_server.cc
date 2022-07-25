@@ -260,7 +260,7 @@ static int epoll_create1(int flags) {
   if (fd == -1)
     return fd;
   if (flags == O_CLOEXEC) {
-    int ret = fnctl(fd, F_SETFL, FD_CLOEXEC);
+    int ret = fcntl(fd, F_SETFL, FD_CLOEXEC);
     if (ret == -1) {
       close(fd);
       return -1;

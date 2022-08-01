@@ -226,6 +226,7 @@ if (LINUX)
         ./linux/socket.h
         ./linux/thread_info.cc
         ./linux/thread_info.h
+        ./misc/capture_context_linux.S
         ./misc/paths_linux.cc
         ./misc/time_linux.cc
         ./net/http_transport_libcurl.cc

@@ -39,4 +39,5 @@
 /xcodebuild
 tag
 /cbuild
+/ndkbuild
 

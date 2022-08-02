@@ -65,3 +65,7 @@ add_subdirectory(third_party/mini_chromium)
 add_subdirectory(client)
 add_subdirectory(handler)
 add_subdirectory(tools)
+
+if (BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif (BUILD_EXAMPLES)

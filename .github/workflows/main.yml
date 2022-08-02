@@ -30,7 +30,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ 
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
 
       - name: Tar files to preserve file permissions
@@ -59,7 +59,7 @@ jobs:
           
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          cmake -S . -B cbuild/  -G "Visual Studio 16 2019"
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "Visual Studio 16 2019"
           cmake --build cbuild/
         
       #- name: Tar files to preserve file permissions
@@ -84,7 +84,7 @@ jobs:
       - name: CMake
         run: | 
           mkdir cbuild
-          cmake -S . -B cbuild/ 
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
         
       - name: Tar files to preserve file permissions
@@ -130,7 +130,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild 
-          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
 
       - name: Tar files to preserve file permissions

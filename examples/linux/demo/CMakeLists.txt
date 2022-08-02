@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(demo LANGUAGES CXX)
+project(demo_linux LANGUAGES CXX)
 
-add_subdirectory(crashpad)
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    add_subdirectory(crashpad)
+endif ()
 
-add_executable(demo demo.cpp)
-target_compile_features(demo PRIVATE cxx_std_14)
-target_link_libraries(demo PRIVATE client)
+add_executable(demo_linux demo.cpp)
+target_compile_features(demo_linux PRIVATE cxx_std_14)
+target_link_libraries(demo_linux PRIVATE client)

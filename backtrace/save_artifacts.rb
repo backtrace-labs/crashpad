@@ -53,8 +53,8 @@ def gather_include_files dir = include_dir
             .map{ [ "include/#{_1}", File.absolute_path(_1) ] }
         
         
-        selected_headers += Dir.chdir 'third_party/mini_chromium' do
-            Dir['mini_chromium/**/*.h']
+        selected_headers += Dir.chdir 'third_party/mini_chromium/mini_chromium' do
+            Dir['**/*.h']
                 .map{ [ "include/#{_1}", File.absolute_path(_1) ] }
         end
 

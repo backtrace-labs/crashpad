@@ -48,6 +48,8 @@ class CrashReportExceptionHandler final
   //!     To interoperate with Breakpad servers, the recommended practice is to
   //!     specify values for the `"prod"` and `"ver"` keys as process
   //!     annotations.
+  //! \param[in] attachments A vector of file paths that should be captured with
+  //!     each report at the time of the crash.
   //! \param[in] user_stream_data_sources Data sources to be used to extend
   //!     crash reports. For each crash report that is written, the data sources
   //!     are called in turn. These data sources may contribute additional
@@ -56,6 +58,7 @@ class CrashReportExceptionHandler final
       CrashReportDatabase* database,
       CrashReportUploadThread* upload_thread,
       const std::map<std::string, std::string>* process_annotations,
+      const std::vector<base::FilePath>* attachments,
       const UserStreamDataSources* user_stream_data_sources);
 
   CrashReportExceptionHandler(const CrashReportExceptionHandler&) = delete;
@@ -88,6 +91,7 @@ class CrashReportExceptionHandler final
   CrashReportDatabase* database_;  // weak
   CrashReportUploadThread* upload_thread_;  // weak
   const std::map<std::string, std::string>* process_annotations_;  // weak
+  const std::vector<base::FilePath>* attachments_;  // weak
   const UserStreamDataSources* user_stream_data_sources_;  // weak
 };
 

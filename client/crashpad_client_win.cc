@@ -820,8 +820,8 @@ void CrashpadClient::DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer) 
   //exception_pointers.ContextRecord = const_cast<CONTEXT*>(&context);
 
   //In this case we don't want to mock fake EXCEPTION_POINTER.
-  g_wer_registration.dump_without_crashing.thread_id = GetCurrentThreadId();
-  g_wer_registration.dump_without_crashing.exception_pointers =
+  g_non_crash_exception_information.thread_id = GetCurrentThreadId();
+  g_non_crash_exception_information.exception_pointers =
       FromPointerCast<WinVMAddress>(&exception_pointers);
 
   g_wer_registration.in_dump_without_crashing = true;

@@ -40,6 +40,10 @@
 
 namespace crashpad {
 
+#if defined(OS_WIN)
+void IgnoreNextException(bool value);
+#endif
+
 //! \brief The primary interface for an application to have Crashpad monitor
 //!     it for crashes.
 class CrashpadClient {
@@ -668,6 +672,12 @@ class CrashpadClient {
   //! \return `true` if the hander startup succeeded, `false` otherwise, and an
   //!     error message will have been logged.
   bool WaitForHandlerStart(unsigned int timeout_ms);
+
+  //! \brief Requests that the handler capture a dump even though there hasn't
+  //!     been a crash.
+  //!
+  //! \param[in] pointer A `EXCEPTION_POINTERS`to current exception received in application
+  static void DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer);
 
   //! \brief Register a DLL using WerRegisterExceptionModule().
   //!

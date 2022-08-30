@@ -788,10 +788,9 @@ bool CrashpadClient::RegisterWerModule(const std::wstring& path) {
   return res == S_OK;
 }
 
-void CrashpadClient::DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer)
-{
-  if (g_signal_non_crash_dump == INVALID_HANDLE_VALUE ||
-      g_non_crash_dump_done == INVALID_HANDLE_VALUE) {
+void CrashpadClient::DumpWithoutCrashWithException(EXCEPTION_POINTERS* pointer) {
+  if (g_wer_registration.dump_without_crashing == INVALID_HANDLE_VALUE ||
+      g_wer_registration.dump_completed == INVALID_HANDLE_VALUE) {
     LOG(ERROR) << "not connected";
     return;
   }

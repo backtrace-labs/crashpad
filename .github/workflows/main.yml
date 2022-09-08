@@ -32,7 +32,7 @@ jobs:
           mkdir cbuild
           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
-
+          
       - name: Tar files to preserve file permissions
         run: tar -cvzf Archive_Crashpad_Linux_build_${{ github.ref_name }}.tar.gz cbuild/
 
@@ -40,6 +40,15 @@ jobs:
         with:
           name: Archive_Crashpad_Linux_build_${{ github.ref_name }}
           path: Archive_Crashpad_Linux_build_${{ github.ref_name }}.tar.gz
+          
+      - name: Crashpad distribution ZIP
+        run: |
+          ruby backtrace/save_artifacts.rb --output Crashpad_Linux_build_${{ github.ref_name }}.zip
+          
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Crashpad_Linux_build_${{ github.ref_name }}
+          path: Crashpad_Linux_build_${{ github.ref_name }}.zip
 
   build-windows:
     # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner

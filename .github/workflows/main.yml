@@ -20,8 +20,8 @@ jobs:
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
       
-      - uses: hsblhsn/version-or-commit-sha@v1
-        id: get_version
+      - uses: tenhaus/get-release-or-tag@v2
+        id: tag
 
       - uses: actions/checkout@v2
         with:
@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Archive_Crashpad_Linux_build_${{ steps.get_version.outputs.VERSION_OR_COMMIT_SHA }}
+          name: Archive_Crashpad_Linux_build_${{ steps.tag.outputs.tag }}
           path: Archive_Crashpad_Linux_build.tar.gz
           
       - name: Crashpad distribution ZIP
@@ -50,7 +50,7 @@ jobs:
           
       - uses: actions/upload-artifact@v3
         with:
-          name: Crashpad_Linux_build_${{ steps.get_version.outputs.VERSION_OR_COMMIT_SHA }}
+          name: Crashpad_Linux_build_${{ steps.tag.outputs.tag }}
           path: Crashpad_Linux_build.zip
 
 #   build-windows:

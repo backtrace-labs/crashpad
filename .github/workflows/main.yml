@@ -19,13 +19,13 @@ jobs:
     steps:
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
-      
-      - uses: tenhaus/get-release-or-tag@v2
-        id: tag
 
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      - uses: tenhaus/get-release-or-tag@v2
+        id: tag
 
       - name: Install curl headers
         run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
@@ -53,64 +53,88 @@ jobs:
           name: Crashpad_Linux_build_${{ steps.tag.outputs.tag }}
           path: Crashpad_Linux_build.zip
 
-#   build-windows:
-#     # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner
-#     runs-on: windows-2019
-#     steps:
-#       # Install latest CMake.
-#       - uses: lukka/get-cmake@latest
+  build-windows:
+    # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner
+    runs-on: windows-2019
+    steps:
+      # Install latest CMake.
+      - uses: lukka/get-cmake@latest
 
-#       - uses: actions/checkout@v2
-#         with:
-#           submodules: recursive
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          
+      - uses: tenhaus/get-release-or-tag@v2
+        id: tag
 
-#       - name: CMake
-#         run: |
-#           # make a build directory (note: build is already used by Crashpad)
-#           mkdir cbuild
+      - name: CMake
+        run: |
+          # make a build directory (note: build is already used by Crashpad)
+          mkdir cbuild
 
-#           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
-#           # it is recommended to specify the compiler version used for the build
-#           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "Visual Studio 16 2019"
-#           cmake --build cbuild/
+          # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
+          # it is recommended to specify the compiler version used for the build
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "Visual Studio 16 2019"
+          cmake --build cbuild/
 
-#       #- name: Tar files to preserve file permissions
-#       #  run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.ref_name }}.tar.gz cbuild/
+      #- name: Tar files to preserve file permissions
+      #  run: tar -cvzf Archive_Crashpad_Windows_build_${{ steps.tag.outputs.tag }}.tar.gz cbuild/
 
-#       - uses: actions/upload-artifact@v3
-#         with:
-#           name: Archive_Crashpad_Windows_build_${{ github.ref_name }}
-#           path: cbuild/
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Archive_Crashpad_Windows_build_${{ steps.tag.outputs.tag }}
+          path: cbuild/
+          
+      - name: Crashpad distribution ZIP
+        run: |
+          ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
+          
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Crashpad_Windows_build_${{ steps.tag.outputs.tag }}
+          path: Crashpad_Windows_build.zip
 
-#   build-macos:
-#     runs-on: macos-latest
+  build-macos:
+    runs-on: macos-latest
 
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         arch: [arm64, x86_64]
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
 
-#     steps:
-#       # Install latest CMake.
-#       - uses: lukka/get-cmake@latest
+    steps:
+      # Install latest CMake.
+      - uses: lukka/get-cmake@latest
 
-#       - uses: actions/checkout@v2
-#         with:
-#           submodules: recursive
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
-#       - name: CMake
-#         run: |
-#           mkdir cbuild
-#           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
-#           cmake --build cbuild/
+      - uses: tenhaus/get-release-or-tag@v2
+        id: tag
 
-#       - name: Tar files to preserve file permissions
-#         run: tar -cvzf Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.ref_name }}.tar.gz cbuild/
+      - name: CMake
+        run: |
+          mkdir cbuild
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+          cmake --build cbuild/
 
-#       - uses: actions/upload-artifact@v3
-#         with:
-#           name: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.ref_name }}
-#           path: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.ref_name }}.tar.gz
+      - name: Tar files to preserve file permissions
+        run: tar -cvzf Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz cbuild/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ steps.tag.outputs.tag }}
+          path: Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz
+
+      - name: Crashpad distribution ZIP
+        run: |
+          ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build.zip
+          
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Crashpad_MacOs_build_${{ steps.tag.outputs.tag }}
+          path: Crashpad_MacOs_build.zip
 
 #   build-android:
 #     runs-on: ubuntu-latest

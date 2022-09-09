@@ -81,6 +81,7 @@ jobs:
           
       - name: Crashpad distribution ZIP
         run: |
+          gem install bundler
           ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
           
       - uses: actions/upload-artifact@v3

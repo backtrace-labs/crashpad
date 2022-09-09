@@ -33,13 +33,13 @@ jobs:
           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
           
-      - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_Linux_build.tar.gz cbuild/
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Archive_Crashpad_Linux_build_${{ github.sha }}
-          path: Archive_Crashpad_Linux_build.tar.gz
+#       - name: Tar files to preserve file permissions
+#         run: tar -cvzf Archive_Crashpad_Linux_build.tar.gz cbuild/
+# 
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           name: Archive_Crashpad_Linux_build_${{ github.sha }}
+#           path: Archive_Crashpad_Linux_build.tar.gz
           
       - name: Crashpad distribution ZIP
         run: |
@@ -74,10 +74,10 @@ jobs:
       #- name: Tar files to preserve file permissions
       #  run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.sha }}.tar.gz cbuild/
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Archive_Crashpad_Windows_build_${{ github.sha }}
-          path: cbuild/
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           name: Archive_Crashpad_Windows_build_${{ github.sha }}
+#           path: cbuild/
       
       - uses: ruby/setup-ruby@v1
         with:
@@ -114,13 +114,13 @@ jobs:
           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
           cmake --build cbuild/
 
-      - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz cbuild/
+#       - name: Tar files to preserve file permissions
+#         run: tar -cvzf Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz cbuild/
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.sha }}
-          path: Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           name: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.sha }}
+#           path: Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz
 
       - name: Crashpad distribution ZIP
         run: |
@@ -169,13 +169,13 @@ jobs:
           cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
 
-      - name: Tar files to preserve file permissions
-        run: tar -cvzf Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.tar.gz cbuild/
+#       - name: Tar files to preserve file permissions
+#         run: tar -cvzf Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.tar.gz cbuild/
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}
-          path: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.tar.gz
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           name: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}
+#           path: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.tar.gz
 
       - name: Crashpad distribution ZIP
         run: |

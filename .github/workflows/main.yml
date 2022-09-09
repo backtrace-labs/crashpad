@@ -24,9 +24,6 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: tenhaus/get-release-or-tag@v2
-        id: tag
-
       - name: Install curl headers
         run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
 
@@ -41,7 +38,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Archive_Crashpad_Linux_build_${{ steps.tag.outputs.tag }}
+          name: Archive_Crashpad_Linux_build_${{ github.sha }}
           path: Archive_Crashpad_Linux_build.tar.gz
           
       - name: Crashpad distribution ZIP
@@ -50,7 +47,7 @@ jobs:
           
       - uses: actions/upload-artifact@v3
         with:
-          name: Crashpad_Linux_build_${{ steps.tag.outputs.tag }}
+          name: Crashpad_Linux_build_${{ github.sha }}
           path: Crashpad_Linux_build.zip
 
   build-windows:
@@ -63,9 +60,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-          
-      - uses: tenhaus/get-release-or-tag@v2
-        id: tag
 
       - name: CMake
         run: |
@@ -78,11 +72,11 @@ jobs:
           cmake --build cbuild/
 
       #- name: Tar files to preserve file permissions
-      #  run: tar -cvzf Archive_Crashpad_Windows_build_${{ steps.tag.outputs.tag }}.tar.gz cbuild/
+      #  run: tar -cvzf Archive_Crashpad_Windows_build_${{ github.sha }}.tar.gz cbuild/
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Archive_Crashpad_Windows_build_${{ steps.tag.outputs.tag }}
+          name: Archive_Crashpad_Windows_build_${{ github.sha }}
           path: cbuild/
           
       - name: Crashpad distribution ZIP
@@ -91,7 +85,7 @@ jobs:
           
       - uses: actions/upload-artifact@v3
         with:
-          name: Crashpad_Windows_build_${{ steps.tag.outputs.tag }}
+          name: Crashpad_Windows_build_${{ github.sha }}
           path: Crashpad_Windows_build.zip
 
   build-macos:
@@ -110,9 +104,6 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: tenhaus/get-release-or-tag@v2
-        id: tag
-
       - name: CMake
         run: |
           mkdir cbuild
@@ -124,7 +115,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ steps.tag.outputs.tag }}
+          name: Archive_Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.sha }}
           path: Archive_Crashpad_MacOs_build_${{ matrix.arch }}.tar.gz
 
       - name: Crashpad distribution ZIP
@@ -133,51 +124,60 @@ jobs:
           
       - uses: actions/upload-artifact@v3
         with:
-          name: Crashpad_MacOs_build_${{ steps.tag.outputs.tag }}
+          name: Crashpad_MacOs_build_${{ github.sha }}
           path: Crashpad_MacOs_build.zip
 
-#   build-android:
-#     runs-on: ubuntu-latest
+  build-android:
+    runs-on: ubuntu-latest
 
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
-#         abi: [armeabi-v7a, arm64-v8a, x86_64]
-#         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
-#         apiLevel: [21, 32]
-#         ndk: [24.0.8215888]
-#         include:
-#           - apiLevel: 16
-#             abi: armeabi-v7a
-#             ndk: 24.0.8215888
+    strategy:
+      fail-fast: false
+      matrix:
+        # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
+        abi: [armeabi-v7a, arm64-v8a, x86_64]
+        # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
+        apiLevel: [21, 32]
+        ndk: [24.0.8215888]
+        include:
+          - apiLevel: 16
+            abi: armeabi-v7a
+            ndk: 24.0.8215888
 
-#     steps:
-#       # Install latest CMake.
-#       - uses: lukka/get-cmake@latest
+    steps:
+      # Install latest CMake.
+      - uses: lukka/get-cmake@latest
 
-#       - uses: actions/checkout@v2
-#         with:
-#           submodules: recursive
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
-#       - name: Install NDK (optional)
-#         # available on GitHub Actions host (as of 7/24/22) listed below
-#         if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
-#         run: |
-#           echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
-#           #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
+      - name: Install NDK (optional)
+        # available on GitHub Actions host (as of 7/24/22) listed below
+        if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
+        run: |
+          echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
+          #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
 
 
-#       - name: CMake
-#         run: |
-#           mkdir cbuild
-#           cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DBUILD_EXAMPLES=TRUE
-#           cmake --build cbuild/
+      - name: CMake
+        run: |
+          mkdir cbuild
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DBUILD_EXAMPLES=TRUE
+          cmake --build cbuild/
 
-#       - name: Tar files to preserve file permissions
-#         run: tar -cvzf Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.ref_name }}.tar.gz cbuild/
+      - name: Tar files to preserve file permissions
+        run: tar -cvzf Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.tar.gz cbuild/
 
-#       - uses: actions/upload-artifact@v3
-#         with:
-#           name: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.ref_name }}
-#           path: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.ref_name }}.tar.gz
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}
+          path: Archive_Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.tar.gz
+
+      - name: Crashpad distribution ZIP
+        run: |
+          ruby backtrace/save_artifacts.rb --output Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip
+          
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}
+          path: Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip

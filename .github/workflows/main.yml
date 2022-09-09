@@ -78,10 +78,13 @@ jobs:
         with:
           name: Archive_Crashpad_Windows_build_${{ github.sha }}
           path: cbuild/
-          
+      
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+
       - name: Crashpad distribution ZIP
         run: |
-          gem install bundler
           ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
           
       - uses: actions/upload-artifact@v3

@@ -51,6 +51,9 @@ if (WIN32 AND STATIC_RUNTIME)
         $<$<CONFIG:Release>:/MT>
         $<$<CONFIG:RelWithDebInfo>:/MT>
     )
+    add_compile_definitions(
+        $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
+    )
 endif (WIN32 AND STATIC_RUNTIME)
 
 add_executable(handler main.cc)

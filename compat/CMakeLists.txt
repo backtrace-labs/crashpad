@@ -59,10 +59,17 @@ if (WIN32 AND STATIC_RUNTIME)
         $<$<CONFIG:Release>:/MT>
         $<$<CONFIG:RelWithDebInfo>:/MT>
     )
+    add_compile_definitions(
+        $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
+    )
 endif (WIN32 AND STATIC_RUNTIME)
 
 add_library(compat_incl INTERFACE)
 add_library(compat OBJECT)
+
+if (WIN32 AND STATIC_RUNTIME)
+    set_target_properties(compat PROPERTIES STATIC_LIBRARY_OPTIONS "/NODEFAULTLIB;")
+endif (WIN32 AND STATIC_RUNTIME)
 
 target_sources(compat PRIVATE ${CRASHPAD_COMPAT_LIBRARY_FILES})
 target_link_libraries(compat PUBLIC util compat_incl)

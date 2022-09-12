@@ -123,9 +123,17 @@ if (WIN32 AND STATIC_RUNTIME)
         $<$<CONFIG:Release>:/MT>
         $<$<CONFIG:RelWithDebInfo>:/MT>
     )
+    add_compile_definitions(
+        $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
+    )
 endif (WIN32 AND STATIC_RUNTIME)
 
 add_library(mini_chromium OBJECT ${CRASHPAD_MINI_CHROMIUM_LIBRARY_FILES})
+
+if (WIN32 AND STATIC_RUNTIME)
+    set_target_properties(mini_chromium PROPERTIES STATIC_LIBRARY_OPTIONS "/NODEFAULTLIB;")
+endif (WIN32 AND STATIC_RUNTIME)
+
 target_compile_features(mini_chromium PUBLIC cxx_std_14)
 target_include_directories(mini_chromium PUBLIC mini_chromium)
 

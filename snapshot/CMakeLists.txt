@@ -166,6 +166,15 @@ if (WIN32)
     )
 endif (WIN32)
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_library(snapshot OBJECT ${CRASHPAD_SNAPSHOT_LIBRARY_FILES})
 
 if (ANDROID)

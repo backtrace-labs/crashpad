@@ -116,6 +116,15 @@ if (WIN32)
     )
 endif (WIN32)
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_library(mini_chromium OBJECT ${CRASHPAD_MINI_CHROMIUM_LIBRARY_FILES})
 target_compile_features(mini_chromium PUBLIC cxx_std_14)
 target_include_directories(mini_chromium PUBLIC mini_chromium)

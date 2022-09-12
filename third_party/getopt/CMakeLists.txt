@@ -3,6 +3,15 @@ set(CRASHPAD_GETOPT_LIBRARY_FILES
     getopt.h
 )
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_library(crashpad_getopt OBJECT)
 target_sources(crashpad_getopt PRIVATE
     ${CRASHPAD_GETOPT_LIBRARY_FILES})

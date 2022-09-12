@@ -45,6 +45,15 @@ if (WIN32)
     )
 endif (WIN32)
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_library(client STATIC ${CRASHPAD_CLIENT_LIBRARY_FILES})
 
 target_compile_features(client PUBLIC cxx_std_14)

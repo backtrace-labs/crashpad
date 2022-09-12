@@ -37,6 +37,15 @@ if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86_64)|(AMD64)")
     )
 endif ()
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_library(zlib STATIC)
 target_sources(zlib PRIVATE
     ${CRASHPAD_ZLIB_LIBRARY_FILES}

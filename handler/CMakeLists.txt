@@ -44,6 +44,15 @@ if (ANDROID)
     )
 endif (ANDROID)
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_executable(handler main.cc)
 target_sources(handler PRIVATE ${CRASHPAD_HANDLER_LIBRARY_FILES})
 target_compile_features(handler PUBLIC cxx_std_17)

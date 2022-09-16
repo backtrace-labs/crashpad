@@ -56,6 +56,13 @@ endif (APPLE)
 
 if (WIN32)
     target_link_libraries(handler PUBLIC crashpad_getopt)
+    set_target_properties(handler PROPERTIES WIN32_EXECUTABLE TRUE)
+
+    add_executable(handler_console main.cc)
+    target_sources(handler_console PRIVATE ${CRASHPAD_HANDLER_LIBRARY_FILES})
+    target_compile_features(handler_console PUBLIC cxx_std_17)
+    target_include_directories(handler_console PRIVATE ..)
+    target_link_libraries(handler_console PRIVATE client tools compat snapshot minidump crashpad_getopt)
 endif (WIN32)
 
 if (ANDROID)

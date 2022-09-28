@@ -36,6 +36,7 @@
 #include "build/buildflag.h"
 #include "client/client_argv_handling.h"
 #include "third_party/lss/lss.h"
+#include "util/backtrace/crash_loop_detection.h"
 #include "util/file/file_io.h"
 #include "util/file/filesystem.h"
 #include "util/linux/exception_handler_client.h"
@@ -459,6 +460,13 @@ bool CrashpadClient::StartHandler(
 
   argv.push_back(FormatArgumentInt("initial-client-fd", handler_sock.get()));
   argv.push_back("--shared-client-connection");
+
+  if (crash_loop_detection_) {
+    namespace clc = backtrace::crash_loop_detection;
+    DCHECK(clc::CrashLoopDetectionAppend(database, run_uuid_));
+    argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
+  }
+
   if (!SpawnSubprocess(argv, nullptr, handler_sock.get(), false, nullptr)) {
     return false;
   }
@@ -473,6 +481,20 @@ bool CrashpadClient::StartHandler(
   return signal_handler->Initialize(
       std::move(client_sock), handler_pid, &unhandled_signals_);
 }
+
+#if BUILDFLAG(IS_LINUX) || DOXYGEN
+bool CrashpadClient::EnableCrashLoopDetection()
+{
+  crash_loop_detection_ = run_uuid_.InitializeWithNew();
+  return crash_loop_detection_;
+}
+
+int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
+{
+  namespace clc = backtrace::crash_loop_detection;
+  return clc::ConsecutiveCrashesCount(database);
+}
+#endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 // static

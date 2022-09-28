@@ -36,6 +36,8 @@
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 #include <signal.h>
 #include <ucontext.h>
+
+#include "util/misc/uuid.h"
 #endif
 
 namespace crashpad {
@@ -128,6 +130,31 @@ class CrashpadClient {
                     bool restartable,
                     bool asynchronous_start,
                     const std::vector<base::FilePath>& attachments = {});
+
+#if BUILDFLAG(IS_LINUX) || DOXYGEN
+  //! \brief Enable Crash Loop detection.
+  //!
+  //! This function must be called prior to `StartHandler()`
+  //!
+  //! \return `true` on success. Otherwise `false` with a message logged.
+  bool EnableCrashLoopDetection();
+
+  //! \brief Detects the number of the consecutive crashing runs
+  //!
+  //! This function reads the crash database and counts the number of last
+  //! consecutive runs having crashed.
+  //!
+  //! \return number of logged errors on success. Otherwise `-1`.
+  static bool IsSafeModeRequired(const base::FilePath& database);
+
+  //! \brief Detects the number of the consecutive crashing runs
+  //!
+  //! This function reads the crash database and counts the number of last
+  //! consecutive runs having crashed.
+  //!
+  //! \return number of logged errors on success. Otherwise `-1`.
+  static int ConsecutiveCrashesCount(const base::FilePath& database);
+#endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
     DOXYGEN
@@ -787,6 +814,8 @@ class CrashpadClient {
   std::wstring ipc_pipe_;
   ScopedKernelHANDLE handler_start_thread_;
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+  bool crash_loop_detection_ = false;
+  UUID run_uuid_;
   std::set<int> unhandled_signals_;
 #endif  // BUILDFLAG(IS_APPLE)
 };

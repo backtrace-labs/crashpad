@@ -1,4 +1,6 @@
 set(CRASHPAD_UTIL_LIBRARY_FILES
+    ./backtrace/crash_loop_detection.cc
+    ./backtrace/crash_loop_detection.h
     ./file/delimited_file_reader.cc
     ./file/delimited_file_reader.h
     ./file/directory_reader.h

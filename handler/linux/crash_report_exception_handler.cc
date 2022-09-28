@@ -24,6 +24,7 @@
 #include "minidump/minidump_file_writer.h"
 #include "snapshot/linux/process_snapshot_linux.h"
 #include "snapshot/sanitized/process_snapshot_sanitized.h"
+#include "util/backtrace/crash_loop_detection.h"
 #include "util/file/file_helper.h"
 #include "util/file/file_reader.h"
 #include "util/file/output_stream_file_writer.h"
@@ -127,6 +128,19 @@ bool CrashReportExceptionHandler::HandleException(
     pid_t* requesting_thread_id,
     UUID* local_report_id) {
   Metrics::ExceptionEncountered();
+
+  {
+    auto it = process_annotations_->find("run-uuid");
+    if (it != process_annotations_->cend()) {
+      namespace cld = backtrace::crash_loop_detection;
+      UUID uuid;
+      uuid.InitializeFromString(it->second);
+      auto success = cld::CrashLoopDetectionSetCrashed(database_->DatabasePath(), uuid);
+      if (!success)
+        LOG(ERROR) << "Failed to set crash loop detection data for '" << it->second
+          << "'";
+    }
+  }
 
   DirectPtraceConnection connection;
   if (!connection.Initialize(client_process_id)) {

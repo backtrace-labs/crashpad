@@ -9,4 +9,5 @@ endif (WIN32)
     
 if (LINUX)
     add_subdirectory(linux/demo)
+    add_subdirectory(linux/crash_loop_detection)
 endif (LINUX)

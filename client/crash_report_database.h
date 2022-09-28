@@ -272,6 +272,11 @@ class CrashReportDatabase {
   //!     database.
   virtual Settings* GetSettings() = 0;
 
+  //! \brief The path to the database passed to Initialize.
+  //!
+  //! \return The filepath of the database;
+  virtual base::FilePath DatabasePath() = 0;
+
   //! \brief Creates a record of a new crash report.
   //!
   //! Callers should write the crash report using the FileWriter provided.
@@ -417,11 +422,6 @@ class CrashReportDatabase {
 
  protected:
   CrashReportDatabase() {}
-
-  //! \brief The path to the database passed to Initialize.
-  //!
-  //! \return The filepath of the database;
-  virtual base::FilePath DatabasePath() = 0;
 
   //! \brief Build a filepath for the root attachments directory.
   //!

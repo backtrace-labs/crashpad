@@ -17,7 +17,11 @@ namespace crash_loop_detection {
 
 static std::string CsvFileName(const base::FilePath& database)
 {
+#if defined(OS_WIN)
+  return database.value() + L"/crash_loop_detection.csv";
+#else
   return database.value() + "/crash_loop_detection.csv";
+#endif
 }
 
 using CrashData = std::deque<std::vector<std::string>>;

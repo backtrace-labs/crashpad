@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "build/build_config.h"
 #include "util/string/split_string.h"
 
 namespace crashpad {
@@ -17,7 +18,7 @@ namespace crash_loop_detection {
 
 static std::string CsvFileName(const base::FilePath& database)
 {
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   return database.value() + L"/crash_loop_detection.csv";
 #else
   return database.value() + "/crash_loop_detection.csv";

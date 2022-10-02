@@ -16,7 +16,7 @@ namespace crashpad {
 namespace backtrace {
 namespace crash_loop_detection {
 
-static std::string CsvFileName(const base::FilePath& database)
+static auto CsvFileName(const base::FilePath& database)
 {
 #if BUILDFLAG(IS_WIN)
   return database.value() + L"/crash_loop_detection.csv";

@@ -482,7 +482,7 @@ bool CrashpadClient::StartHandler(
       std::move(client_sock), handler_pid, &unhandled_signals_);
 }
 
-#if BUILDFLAG(IS_LINUX) || DOXYGEN
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || DOXYGEN
 bool CrashpadClient::EnableCrashLoopDetection()
 {
   crash_loop_detection_ = run_uuid_.InitializeWithNew();

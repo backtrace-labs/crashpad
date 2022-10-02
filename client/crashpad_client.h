@@ -131,7 +131,7 @@ class CrashpadClient {
                     bool asynchronous_start,
                     const std::vector<base::FilePath>& attachments = {});
 
-#if BUILDFLAG(IS_LINUX) || DOXYGEN
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || DOXYGEN
   //! \brief Enable Crash Loop detection.
   //!
   //! This function must be called prior to `StartHandler()`

@@ -5,6 +5,7 @@ endif (APPLE)
     
 if (WIN32)
     add_subdirectory(windows/demo)
+    add_subdirectory(windows/qt-window-app)
 endif (WIN32)
     
 if (LINUX)

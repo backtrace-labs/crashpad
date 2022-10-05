@@ -15,6 +15,7 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets)
 set(PROJECT_SOURCES
     backtrace.cpp
     backtrace.hpp
+    backtrace.qrc
     main.cpp
     mainwindow.cpp
     mainwindow.hpp
@@ -25,4 +26,9 @@ add_executable(qt_window_app ${PROJECT_SOURCES})
 
 target_link_libraries(qt_window_app PRIVATE Qt5::Gui Qt5::Core Qt5::Widgets client)
 target_compile_features(qt_window_app PRIVATE cxx_std_17)
-# set_target_properties(qt_window_app PROPERTIES WIN32_EXECUTABLE TRUE)
+
+if (WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/app.rc")
+    set_target_properties(qt_window_app PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_sources(qt_window_app PRIVATE ${APP_ICON_RESOURCE_WINDOWS})
+endif ()

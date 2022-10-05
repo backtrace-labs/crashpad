@@ -15,9 +15,14 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void initializeCrashpad();
 
 private:
+    void initializeCrashpad();
+    void selectHandlerPath();
+
+    void saveState();
+    void loadState();
+
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

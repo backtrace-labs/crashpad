@@ -65,7 +65,6 @@ set(CRASHPAD_UTIL_LIBRARY_FILES
     ./net/http_headers.h
     ./net/http_multipart_builder.cc
     ./net/http_multipart_builder.h
-    ./net/http_transport_test_server.cc
     ./net/http_transport.cc
     ./net/http_transport.h
     ./net/url.cc

@@ -140,12 +140,12 @@ jobs:
         # supported are: armeabi-v7a, arm64-v8a, x86_64. x86 (32-bit) is NOT supported
         abi: [armeabi-v7a, arm64-v8a, x86_64]
         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
-        apiLevel: [21, 32]
-        ndk: [24.0.8215888]
+        apiLevel: [21, 33]
+        ndk: [25.1.8937393]
         include:
           - apiLevel: 16
             abi: armeabi-v7a
-            ndk: 24.0.8215888
+            ndk: 25.1.8937393
 
     steps:
       # Install latest CMake.

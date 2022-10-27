@@ -1,4 +1,4 @@
-// Copyright 2022 The Crashpad Authors. All rights reserved.
+// Copyright 2022 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 #include "handler/win/wer/crashpad_wer.h"
 
 #include "util/misc/address_types.h"
-#include "util/win/registration_protocol_win.h"
+#include "util/win/registration_protocol_win_structs.h"
 
 #include <Windows.h>
 #include <werapi.h>
@@ -26,6 +26,18 @@
 namespace crashpad::wer {
 namespace {
 using crashpad::WerRegistration;
+
+// bIsFatal and dwReserved fields are not present in SDK < 19041.
+struct WER_RUNTIME_EXCEPTION_INFORMATION_19041 {
+  DWORD dwSize;
+  HANDLE hProcess;
+  HANDLE hThread;
+  EXCEPTION_RECORD exceptionRecord;
+  CONTEXT context;
+  PCWSTR pwszReportId;
+  BOOL bIsFatal;
+  DWORD dwReserved;
+};
 
 // We have our own version of this to avoid pulling in //base.
 class ScopedHandle {
@@ -61,24 +73,37 @@ ScopedHandle DuplicateFromTarget(HANDLE target_process, HANDLE target_handle) {
   return ScopedHandle(hTmp);
 }
 
-bool ProcessException(std::vector<DWORD>& handled_exceptions,
+bool ProcessException(const DWORD* handled_exceptions,
+                      size_t num_handled_exceptions,
                       const PVOID pContext,
                       const PWER_RUNTIME_EXCEPTION_INFORMATION e_info) {
   // Need to have been given a context.
   if (!pContext)
     return false;
 
-  if (!e_info->bIsFatal)
-    return false;
-
-  // Only deal with exceptions that crashpad would not have handled.
-  if (handled_exceptions.size() &&
-      std::find(handled_exceptions.begin(),
-                handled_exceptions.end(),
-                e_info->exceptionRecord.ExceptionCode) ==
-          handled_exceptions.end()) {
+  // Older OSes might provide a smaller structure than SDK 19041 defines.
+  if (e_info->dwSize <=
+      offsetof(WER_RUNTIME_EXCEPTION_INFORMATION_19041, bIsFatal)) {
     return false;
   }
+
+  // If building with SDK < 19041 then the bIsFatal field isn't defined, so
+  // use our internal definition here.
+  if (!reinterpret_cast<const WER_RUNTIME_EXCEPTION_INFORMATION_19041*>(e_info)
+           ->bIsFatal) {
+    return false;
+  }
+
+  // Only deal with exceptions that crashpad would not have handled.
+  bool found = false;
+  for (size_t i = 0; i < num_handled_exceptions; i++) {
+    if (handled_exceptions[i] == e_info->exceptionRecord.ExceptionCode) {
+      found = true;
+      break;
+    }
+  }
+  if (!found)
+    return false;
 
   // Grab out the handles to the crashpad server.
   WerRegistration target_registration = {};
@@ -168,10 +193,14 @@ bool ProcessException(std::vector<DWORD>& handled_exceptions,
 }  // namespace
 
 bool ExceptionEvent(
-    std::vector<DWORD>& handled_exceptions,
+    const DWORD* handled_exceptions,
+    size_t num_handled_exceptions,
     const PVOID pContext,
     const PWER_RUNTIME_EXCEPTION_INFORMATION pExceptionInformation) {
-  return ProcessException(handled_exceptions, pContext, pExceptionInformation);
+  return ProcessException(handled_exceptions,
+                          num_handled_exceptions,
+                          pContext,
+                          pExceptionInformation);
 }
 
 }  // namespace crashpad::wer

@@ -144,12 +144,13 @@ class CrashpadClient {
   //! \return `true` on success. Otherwise `false` with a message logged.
   bool EnableCrashLoopDetection();
 
-  //! \brief Detects the number of the consecutive crashing runs
+  //! \brief Detects if safe mode should be enabled
   //!
-  //! This function reads the crash database and counts the number of last
-  //! consecutive runs having crashed.
+  //! This function uses a heuristic to determine whether it makes sense to
+  //! require the safe mode. Currently it only looks at the number of
+  //! consecutive crashes.
   //!
-  //! \return number of logged errors on success. Otherwise `-1`.
+  //! \return `true` if safe mode is required, `false` otherwise
   static bool IsSafeModeRequired(const base::FilePath& database);
 
   //! \brief Detects the number of the consecutive crashing runs

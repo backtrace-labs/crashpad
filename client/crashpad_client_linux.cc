@@ -489,6 +489,11 @@ bool CrashpadClient::EnableCrashLoopDetection()
   return crash_loop_detection_;
 }
 
+bool CrashpadClient::IsSafeModeRequired(const base::FilePath& database)
+{
+  return ConsecutiveCrashesCount(database) >= 5;
+}
+
 int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
 {
   namespace clc = backtrace::crash_loop_detection;

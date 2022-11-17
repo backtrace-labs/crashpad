@@ -73,7 +73,7 @@ int main(int argc, char** argv)
      * pane. Preferably, the SSL enabled port should
      * be used.
      */
-    std::string url("https://submit.backtrace.io/yolo/c5a3a1675dbcfa1d12fd7efbc7bef9350874654e55ff86478115c8bc073f54dc/minidump");
+    std::string url("https://submit.backtrace.io/yolo/c5a3a1675dbcfa1d12fd7efbc7bef9350874654e55ff86478115c8bc00000000/minidump");
 
     /*
      * ENSURE THIS VALUE IS CORRECT.

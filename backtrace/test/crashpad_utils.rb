@@ -18,7 +18,7 @@ class Listener
         }
         unless defined?(DEBUG)
             webrick_params = webrick_params.merge({
-                Logger: WEBrick::Log.new("/dev/null"),
+                Logger: WEBrick::Log.new(OS.windows? ? "NUL:" : "/dev/null"),
                 AccessLog: []
             })
         end

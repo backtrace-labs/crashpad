@@ -110,7 +110,7 @@ class Execution
             if tmp_dir
                 execute.call tmp_dir
             else
-                Dir.mktmpdir { execute.call _1 }
+                Dir.mktmpdir { |dir| execute.call dir }
             end
         end
     end

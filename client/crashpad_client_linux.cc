@@ -707,6 +707,13 @@ bool CrashpadClient::StartHandlerAtCrash(
   std::vector<std::string> argv = BuildHandlerArgvStrings(
       handler, database, metrics_dir, url, annotations, arguments, attachments);
 
+  if (crash_loop_detection_) {
+    namespace clc = backtrace::crash_loop_detection;
+    bool ok = clc::CrashLoopDetectionAppend(database, run_uuid_);
+    DCHECK(ok);
+    argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
+  }
+
   auto signal_handler = LaunchAtCrashHandler::Get();
   return signal_handler->Initialize(&argv, nullptr, &unhandled_signals_);
 }

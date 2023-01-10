@@ -362,7 +362,10 @@ if (APPLE)
 endif (APPLE)
 
 if (ANDROID)
-    target_link_libraries(util PUBLIC openssl-android-binary)
+    if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
+        target_link_libraries(util PUBLIC openssl-android-binary)
+    elseif(ANDROID_SSL_MODE STREQUAL "NONE")
+    endif ()
 endif (ANDROID)
 
 if (UNIX)

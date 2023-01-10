@@ -30,14 +30,14 @@ create_result create(const base::FilePath& database) {
 
   if (file_exists(certs_file))
     return create_result::already_exists;
-  
+
   FileHandle file_handle = open(certs_file.value().c_str(),
     O_CREAT | O_TRUNC | O_WRONLY, 0644);
-  
+
   if (file_handle == -1)
     return create_result::failure;
 
-  auto out = std::make_unique<FileOutputStream>(file_handle);  
+  auto out = std::make_unique<FileOutputStream>(file_handle);
   ZlibOutputStream ungzip(ZlibOutputStream::Mode::kDecompress, std::move(out));
 
   if (!ungzip.Write(certs_pem_gz, certs_pem_gz_len) || !ungzip.Flush()) {

@@ -36,6 +36,9 @@
 
 #if defined(CRASHPAD_USE_BORINGSSL)
 #include <openssl/ssl.h>
+#if BUILDFLAG(IS_ANDROID)
+#include "util/backtrace/android_cert_store.h"
+#endif
 #endif
 
 namespace crashpad {
@@ -121,14 +124,41 @@ class SSLStream : public Stream {
     SSL_CTX_set_verify(ctx_.get(), SSL_VERIFY_PEER, nullptr);
     SSL_CTX_set_verify_depth(ctx_.get(), 5);
 
+#if BUILDFLAG(IS_ANDROID)
+    {
+      namespace cs = crashpad::backtrace::android_cert_store;
+      auto result = cs::create(root_cert_path);
+      if (result == cs::create_result::failure) {
+        LOG(ERROR) << "Failed to create AndroidCertStore";
+        return false;
+      }
+    }
+#endif
+
     if (!root_cert_path.empty()) {
+#if BUILDFLAG(IS_ANDROID)
+      auto path = root_cert_path.value() + "/backtrace-cacert.pem";
+      if (SSL_CTX_load_verify_locations(
+              ctx_.get(), path.c_str(), nullptr) <= 0) {
+        LOG(ERROR) << "SSL_CTX_load_verify_locations";
+        return false;
+      }
+#else
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), root_cert_path.value().c_str(), nullptr) <= 0) {
         LOG(ERROR) << "SSL_CTX_load_verify_locations";
         return false;
       }
+#endif
     } else {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID)
+      auto path = root_cert_path.value() + "/backtrace-cacert.pem";
+      if (SSL_CTX_load_verify_locations(
+              ctx_.get(), path.c_str(), nullptr) <= 0) {
+        LOG(ERROR) << "SSL_CTX_load_verify_locations";
+        return false;
+      }
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), nullptr, "/etc/ssl/certs") <= 0) {
         LOG(ERROR) << "SSL_CTX_load_verify_locations";
@@ -165,7 +195,8 @@ class SSLStream : public Stream {
       return false;
     }
 
-    if (SSL_connect(ssl_.get()) <= 0) {
+    int connect = SSL_connect(ssl_.get());
+    if (connect <= 0) {
       LOG(ERROR) << "SSL_connect";
       return false;
     }

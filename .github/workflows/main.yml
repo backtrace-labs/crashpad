@@ -162,6 +162,14 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set env armeabi-v7a
+        if: ${{ matrix.abi == 'armeabi-v7a' }}
+        run: echo "SSL_MODE=NONE" >> $GITHUB_ENV
+
+      - name: Set env others
+        if: ${{ matrix.abi != 'armeabi-v7a' }}
+        run: echo "SSL_MODE=OPENSSL" >> $GITHUB_ENV
+
       - name: Install NDK (optional)
         # available on GitHub Actions host (as of 7/24/22) listed below
         if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
@@ -169,11 +177,10 @@ jobs:
           echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
           #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
 
-
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DBUILD_EXAMPLES=TRUE
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DANDROID_SSL_MODE=${{ env.SSL_MODE }} -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
 
       - name: Crashpad distribution ZIP

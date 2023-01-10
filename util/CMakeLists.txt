@@ -230,7 +230,6 @@ if (LINUX)
         ./misc/capture_context_linux.S
         ./misc/paths_linux.cc
         ./misc/time_linux.cc
-        ./net/http_transport_libcurl.cc
         ./net/http_transport_socket.cc
         ./posix/process_info_linux.cc
         ./posix/scoped_mmap.cc
@@ -310,6 +309,13 @@ if (WIN32)
     endif ()
 endif (WIN32)
 
+if (ANDROID)
+    list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
+        ./backtrace/android_cert_store.cc
+        ./backtrace/android_cert_store.h
+        ./backtrace/certs_pem.h
+    )
+endif (ANDROID)
 
 add_library(util OBJECT ${CRASHPAD_UTIL_LIBRARY_FILES})
 target_compile_features(util PUBLIC cxx_std_17)
@@ -362,7 +368,10 @@ if (APPLE)
 endif (APPLE)
 
 if (ANDROID)
-    target_link_libraries(util PUBLIC openssl-android-binary)
+    if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
+        target_link_libraries(util PUBLIC openssl-android-binary)
+    elseif(ANDROID_SSL_MODE STREQUAL "NONE")
+    endif ()
 endif (ANDROID)
 
 if (UNIX)
@@ -377,15 +386,21 @@ target_include_directories(util PUBLIC ..)
 target_link_libraries(util PUBLIC mini_chromium ZLIB::ZLIB backtrace_common)
 
 if (LINUX AND NOT ANDROID)
-    if (CURL_FOUND)
-        target_link_libraries(util PUBLIC curl)
-    endif (CURL_FOUND)
-
     if (OPENSSL_FOUND)
         target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
         target_link_libraries(util PUBLIC OpenSSL::SSL OpenSSL::Crypto)
     endif (OPENSSL_FOUND)
 endif (LINUX AND NOT ANDROID)
+
+if (ANDROID)
+    if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
+        target_link_libraries(util PUBLIC openssl-android-binary)
+        target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
+    elseif(ANDROID_SSL_MODE STREQUAL "NONE")
+    else()
+        message(FATAL_ERROR "Unknown value for ANDROID_SSL_MODE: ${ANDROID_SSL_MODE}")
+    endif ()
+endif (ANDROID)
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     target_compile_options(util PUBLIC -Wno-multichar)

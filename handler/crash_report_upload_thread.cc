@@ -341,6 +341,13 @@ CrashReportUploadThread::UploadResult CrashReportUploadThread::UploadReport(
   // TODO(mark): The timeout should be configurable by the client.
   http_transport->SetTimeout(internal::kUploadReportTimeoutSeconds);
 
+#if defined(CRASHPAD_USE_BORINGSSL)
+#if BUILDFLAG(IS_ANDROID)
+  http_transport->SetRootCACertificatePath(
+    report->GetDatabase()->DatabasePath());
+#endif // BUILDFLAG(IS_ANDROID)
+#endif // defined(CRASHPAD_USE_BORINGSSL)
+
   std::string url = url_;
   if (options_.identify_client_via_url) {
     // Add parameters to the URL which identify the client to the server.

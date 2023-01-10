@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(backtrace_crashpad LANGUAGES C CXX)
+cmake_policy(SET CMP0077 NEW)
 
 if (UNIX AND NOT APPLE)
     set(LINUX TRUE)
@@ -42,7 +43,10 @@ target_compile_definitions(backtrace_common INTERFACE
     CRASHPAD_LSS_SOURCE_EMBEDDED)
 
 if (ANDROID)
-    add_subdirectory(third_party/openssl-android-binary)
+    option(ANDROID_SSL_MODE "Android SSL mode" "OPENSSL")
+    if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
+        add_subdirectory(third_party/openssl-android-binary)
+    endif()
 elseif (APPLE)
     # do nothing
 elseif (LINUX)

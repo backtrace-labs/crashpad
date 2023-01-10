@@ -1,4 +1,4 @@
-// Copyright 2018 The Crashpad Authors. All rights reserved.
+// Copyright 2018 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -489,6 +489,11 @@ bool CrashpadClient::EnableCrashLoopDetection()
   return crash_loop_detection_;
 }
 
+bool CrashpadClient::IsSafeModeRequired(const base::FilePath& database)
+{
+  return ConsecutiveCrashesCount(database) >= 5;
+}
+
 int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
 {
   namespace clc = backtrace::crash_loop_detection;
@@ -701,6 +706,13 @@ bool CrashpadClient::StartHandlerAtCrash(
     const std::vector<base::FilePath>& attachments) {
   std::vector<std::string> argv = BuildHandlerArgvStrings(
       handler, database, metrics_dir, url, annotations, arguments, attachments);
+
+  if (crash_loop_detection_) {
+    namespace clc = backtrace::crash_loop_detection;
+    bool ok = clc::CrashLoopDetectionAppend(database, run_uuid_);
+    DCHECK(ok);
+    argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
+  }
 
   auto signal_handler = LaunchAtCrashHandler::Get();
   return signal_handler->Initialize(&argv, nullptr, &unhandled_signals_);

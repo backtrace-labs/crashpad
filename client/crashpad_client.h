@@ -1,4 +1,4 @@
-// Copyright 2014 The Crashpad Authors. All rights reserved.
+// Copyright 2014 The Crashpad Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #ifndef CRASHPAD_CLIENT_CRASHPAD_CLIENT_H_
 #define CRASHPAD_CLIENT_CRASHPAD_CLIENT_H_
 
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
@@ -38,6 +39,10 @@
 #include <ucontext.h>
 
 #include "util/misc/uuid.h"
+#endif
+
+#if BUILDFLAG(IS_IOS)
+#include "client/upload_behavior_ios.h"
 #endif
 
 namespace crashpad {
@@ -139,12 +144,13 @@ class CrashpadClient {
   //! \return `true` on success. Otherwise `false` with a message logged.
   bool EnableCrashLoopDetection();
 
-  //! \brief Detects the number of the consecutive crashing runs
+  //! \brief Detects if safe mode should be enabled
   //!
-  //! This function reads the crash database and counts the number of last
-  //! consecutive runs having crashed.
+  //! This function uses a heuristic to determine whether it makes sense to
+  //! require the safe mode. Currently it only looks at the number of
+  //! consecutive crashes.
   //!
-  //! \return number of logged errors on success. Otherwise `-1`.
+  //! \return `true` if safe mode is required, `false` otherwise
   static bool IsSafeModeRequired(const base::FilePath& database);
 
   //! \brief Detects the number of the consecutive crashing runs
@@ -492,6 +498,17 @@ class CrashpadClient {
         // BUILDFLAG(IS_CHROMEOS) || DOXYGEN
 
 #if BUILDFLAG(IS_IOS) || DOXYGEN
+  //! \brief Observation callback invoked each time this object finishes
+  //!     processing and attempting to upload on-disk crash reports (whether or
+  //!     not the uploads succeeded).
+  //!
+  //! This callback is copied into this object. Any references or pointers
+  //! inside must outlive this object.
+  //!
+  //! The callback might be invoked on a background thread, so clients must
+  //! synchronize appropriately.
+  using ProcessPendingReportsObservationCallback = std::function<void()>;
+
   //! \brief Configures the process to direct its crashes to the iOS in-process
   //! Crashpad handler.
   //!
@@ -500,11 +517,16 @@ class CrashpadClient {
   //! \param[in] database The path to a Crashpad database.
   //! \param[in] url The URL of an upload server.
   //! \param[in] annotations Process annotations to set in each crash report.
+  //! \param[in] callback Optional callback invoked zero or more times
+  //!     on a background thread each time the handler finishes
+  //!     processing and attempting to upload on-disk crash reports.
+  //!     If this callback is empty, it is not invoked.
   //! \return `true` on success, `false` on failure with a message logged.
   static bool StartCrashpadInProcessHandler(
       const base::FilePath& database,
       const std::string& url,
-      const std::map<std::string, std::string>& annotations);
+      const std::map<std::string, std::string>& annotations,
+      ProcessPendingReportsObservationCallback callback);
 
   //! \brief Requests that the handler convert intermediate dumps into
   //!     minidumps and trigger an upload if possible.
@@ -545,7 +567,12 @@ class CrashpadClient {
   //! on another thread. This method does not block.
   //!
   //! A handler must have already been installed before calling this method.
-  static void StartProcessingPendingReports();
+  //!
+  //! \param[in] upload_behavior Controls when the upload thread will run and
+  //!     process pending reports. By default, only uploads pending reports
+  //!     when the application is active.
+  static void StartProcessingPendingReports(
+      UploadBehavior upload_behavior = UploadBehavior::kUploadWhenAppIsActive);
 
   //! \brief Requests that the handler capture an intermediate dump even though
   //!     there hasn't been a crash. The intermediate dump will be converted

@@ -36,6 +36,9 @@
 
 #if defined(CRASHPAD_USE_BORINGSSL)
 #include <openssl/ssl.h>
+#if BUILDFLAG(IS_ANDROID)
+#include "util/backtrace/android_cert_store.h"
+#endif
 #endif
 
 namespace crashpad {
@@ -128,7 +131,14 @@ class SSLStream : public Stream {
         return false;
       }
     } else {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID)
+      auto path = root_cert_path.value() + "/backtrace-cacert.pem";
+      if (SSL_CTX_load_verify_locations(
+              ctx_.get(), nullptr, path.c_str()) <= 0) {
+        LOG(ERROR) << "SSL_CTX_load_verify_locations";
+        return false;
+      }
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), nullptr, "/etc/ssl/certs") <= 0) {
         LOG(ERROR) << "SSL_CTX_load_verify_locations";

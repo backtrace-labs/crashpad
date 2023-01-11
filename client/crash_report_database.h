@@ -176,6 +176,11 @@ class CrashReportDatabase {
       return attachment_map_;
     }
 
+#if BUILDFLAG(IS_ANDROID)
+    //! \brief Returns the database that this report belongs to.
+    CrashReportDatabase* GetDatabase() const { return database_; }
+#endif
+
    private:
     friend class CrashReportDatabase;
     friend class CrashReportDatabaseGeneric;

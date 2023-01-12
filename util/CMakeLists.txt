@@ -398,7 +398,7 @@ if (ANDROID)
         target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
     elseif(ANDROID_SSL_MODE STREQUAL "NONE")
     else()
-        message(FATAL_ERROR "Unknown value for ANDROID_SSL_MODE: ${ANDROID_SSL_MODE}"
+        message(FATAL_ERROR "Unknown value for ANDROID_SSL_MODE: ${ANDROID_SSL_MODE}")
     endif ()
 endif (ANDROID)
 

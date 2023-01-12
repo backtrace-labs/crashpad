@@ -37,6 +37,8 @@
 #if defined(CRASHPAD_USE_BORINGSSL)
 #include <openssl/ssl.h>
 #if BUILDFLAG(IS_ANDROID)
+#include <openssl/err.h>
+#include <android/log.h>
 #include "util/backtrace/android_cert_store.h"
 #endif
 #endif
@@ -124,20 +126,49 @@ class SSLStream : public Stream {
     SSL_CTX_set_verify(ctx_.get(), SSL_VERIFY_PEER, nullptr);
     SSL_CTX_set_verify_depth(ctx_.get(), 5);
 
+#if BUILDFLAG(IS_ANDROID)
+    SSL_load_error_strings();
+    ERR_load_crypto_strings();
+    backtrace::android_cert_store::create(root_cert_path);
+    __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: root_cert_path path: %s", root_cert_path.value().c_str());
+#define kqlog(...) __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: " __VA_ARGS__)
+#else
+#define kqlog(...)
+#endif
+
     if (!root_cert_path.empty()) {
+#if BUILDFLAG(IS_ANDROID)
+      auto path = root_cert_path.value() + "/backtrace-cacert.pem";
+        __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: verifying locations (path: %s)",
+            path.c_str());
+      if (SSL_CTX_load_verify_locations(
+              ctx_.get(), nullptr, path.c_str()) <= 0) {
+        __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: verify locations failed (path: %s)",
+            path.c_str());
+        LOG(ERROR) << "SSL_CTX_load_verify_locations";
+        return false;
+      }
+      kqlog("verification ok");
+#else
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), root_cert_path.value().c_str(), nullptr) <= 0) {
         LOG(ERROR) << "SSL_CTX_load_verify_locations";
         return false;
       }
+#endif
     } else {
 #if BUILDFLAG(IS_ANDROID)
       auto path = root_cert_path.value() + "/backtrace-cacert.pem";
+        __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: verifying locations (path: %s)",
+            path.c_str());
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), nullptr, path.c_str()) <= 0) {
+        __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: verify locations failed (path: %s)",
+            path.c_str());
         LOG(ERROR) << "SSL_CTX_load_verify_locations";
         return false;
       }
+      kqlog("verification ok");
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), nullptr, "/etc/ssl/certs") <= 0) {
@@ -155,15 +186,18 @@ class SSLStream : public Stream {
 #endif
     }
 
+    SSL_CTX_set_verify(ctx_.get(), SSL_VERIFY_NONE, NULL);
     ssl_.reset(SSL_new(ctx_.get()));
     if (!ssl_.is_valid()) {
       LOG(ERROR) << "SSL_new";
+      kqlog("%d", __LINE__);
       return false;
     }
 
     BIO* bio = BIO_new_socket(sock, BIO_NOCLOSE);
     if (!bio) {
       LOG(ERROR) << "BIO_new_socket";
+      kqlog("%d", __LINE__);
       return false;
     }
 
@@ -172,14 +206,22 @@ class SSLStream : public Stream {
 
     if (SSL_set_tlsext_host_name(ssl_.get(), hostname.c_str()) == 0) {
       LOG(ERROR) << "SSL_set_tlsext_host_name";
+      kqlog("%d", __LINE__);
       return false;
     }
 
-    if (SSL_connect(ssl_.get()) <= 0) {
+    int connect = SSL_connect(ssl_.get());
+    if (connect <= 0) {
       LOG(ERROR) << "SSL_connect";
+      SSL_get_error(ssl_.get(), connect);
+      kqlog("%d, %d", __LINE__, connect);
+      auto err = ERR_get_error();
+      kqlog("%d, %s", err, ERR_error_string(err, NULL));
+      kqlog("%s", ERR_reason_error_string(err));
       return false;
     }
 
+    kqlog("%d", __LINE__);
     return true;
   }
 

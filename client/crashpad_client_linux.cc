@@ -50,6 +50,11 @@
 #include "util/posix/signals.h"
 #include "util/posix/spawn_subprocess.h"
 
+#if defined(CRASHPAD_USE_BORINGSSL) && BUILDFLAG(IS_ANDROID)
+#include "util/backtrace/android_cert_store.h"
+#include <android/log.h>
+#endif
+
 namespace crashpad {
 
 namespace {
@@ -449,6 +454,11 @@ bool CrashpadClient::StartHandler(
     const std::vector<base::FilePath>& attachments) {
   DCHECK(!asynchronous_start);
 
+#if defined(CRASHPAD_USE_BORINGSSL) && BUILDFLAG(IS_ANDROID)
+  __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: db path: %s", database.value().c_str());
+  backtrace::android_cert_store::create(database);
+#endif
+
   ScopedFileHandle client_sock, handler_sock;
   if (!UnixCredentialSocket::CreateCredentialSocketpair(&client_sock,
                                                         &handler_sock)) {
@@ -706,6 +716,11 @@ bool CrashpadClient::StartHandlerAtCrash(
     const std::vector<base::FilePath>& attachments) {
   std::vector<std::string> argv = BuildHandlerArgvStrings(
       handler, database, metrics_dir, url, annotations, arguments, attachments);
+
+#if defined(CRASHPAD_USE_BORINGSSL) && BUILDFLAG(IS_ANDROID)
+    __android_log_print(ANDROID_LOG_WARN, "Backtrace-Android", "kq: db path: %s", database.value().c_str());
+  backtrace::android_cert_store::create(database);
+#endif
 
   if (crash_loop_detection_) {
     namespace clc = backtrace::crash_loop_detection;

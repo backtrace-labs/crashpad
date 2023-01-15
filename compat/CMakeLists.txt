@@ -54,6 +54,7 @@ endif (WIN32)
 
 add_library(compat_incl INTERFACE)
 add_library(compat OBJECT)
+set_target_properties(compat PROPERTIES LINKER_LANGUAGE CXX)
 
 target_sources(compat PRIVATE ${CRASHPAD_COMPAT_LIBRARY_FILES})
 target_link_libraries(compat PUBLIC util compat_incl)

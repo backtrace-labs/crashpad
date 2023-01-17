@@ -4,11 +4,11 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the "backtrace" branch
   push:
-    branches: [ "backtrace" ]
+    branches: ["backtrace"]
   pull_request:
-    branches: [ "backtrace" ]
+    branches: ["backtrace"]
   schedule:
-    - cron:  '0 0 * * *'
+    - cron: "0 0 * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -24,18 +24,18 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install curl headers
-        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+      - name: Install libssl
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
 
       - name: CMake
         run: |
           mkdir cbuild
           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
           cmake --build cbuild/
-          
+
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           working-directory: ./backtrace/test
           bundler-cache: true
 
@@ -47,7 +47,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Linux_build.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_Linux_build_${{ github.sha }}
@@ -76,7 +76,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           working-directory: ./backtrace/test
           bundler-cache: true
 
@@ -88,7 +88,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_Windows_build_${{ github.sha }}
@@ -119,7 +119,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           working-directory: ./backtrace/test
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           bundler-cache: true
 
       - name: Run tests
@@ -132,7 +132,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build_${{ matrix.arch }}.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.sha }}
@@ -169,7 +169,6 @@ jobs:
           echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
           #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
 
-
       - name: CMake
         run: |
           mkdir cbuild
@@ -179,7 +178,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}

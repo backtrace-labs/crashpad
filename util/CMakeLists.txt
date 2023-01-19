@@ -309,7 +309,7 @@ if (WIN32)
     endif ()
 endif (WIN32)
 
-if (ANDROID)
+if (ANDROID AND NOT ${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)")
     list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
         ./backtrace/android_cert_store.cc
         ./backtrace/android_cert_store.h

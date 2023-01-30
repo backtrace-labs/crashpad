@@ -77,9 +77,16 @@ std::map<std::string, std::string> BreakpadHTTPFormParametersFromMinidump(
     InsertOrReplaceMapEntry(&parameters, "list_annotations", list_annotations);
   }
 
-  UUID client_id;
-  process_snapshot->ClientID(&client_id);
-  InsertOrReplaceMapEntry(&parameters, "guid", client_id.ToString());
+  if (parameters.count("_backtrace_internal_guid_override")) {
+    InsertOrReplaceMapEntry(&parameters,
+                            "guid",
+                            parameters.at("_backtrace_internal_guid_override"));
+    parameters.erase("_backtrace_internal_guid_override");
+  } else {
+    UUID client_id;
+    process_snapshot->ClientID(&client_id);
+    InsertOrReplaceMapEntry(&parameters, "guid", client_id.ToString());
+  }
 
   return parameters;
 }

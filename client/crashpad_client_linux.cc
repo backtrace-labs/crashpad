@@ -467,6 +467,11 @@ bool CrashpadClient::StartHandler(
     argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
   }
 
+  if (uuid_override_enabled_) {
+    argv.push_back("--annotation=_backtrace_internal_guid_override=" +
+                   uuid_override_.ToString());
+  }
+
   if (!SpawnSubprocess(argv, nullptr, handler_sock.get(), false, nullptr)) {
     return false;
   }
@@ -500,6 +505,21 @@ int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
   return clc::ConsecutiveCrashesCount(database);
 }
 #endif
+
+bool CrashpadClient::OverrideGuid(const std::string& uuid)
+{
+  UUID new_uuid;
+  if (!new_uuid.InitializeFromString(uuid))
+    return false;
+  return OverrideGuid(new_uuid);
+}
+
+bool CrashpadClient::OverrideGuid(const UUID& uuid)
+{
+  uuid_override_enabled_ = true;
+  uuid_override_ = uuid;
+  return true;
+}
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 // static
@@ -712,6 +732,11 @@ bool CrashpadClient::StartHandlerAtCrash(
     bool ok = clc::CrashLoopDetectionAppend(database, run_uuid_);
     DCHECK(ok);
     argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
+  }
+
+  if (uuid_override_enabled_) {
+    argv.push_back("--annotation=_backtrace_internal_guid_override=" +
+                   uuid_override_.ToString());
   }
 
   auto signal_handler = LaunchAtCrashHandler::Get();

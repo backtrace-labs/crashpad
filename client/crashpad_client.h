@@ -162,6 +162,18 @@ class CrashpadClient {
   static int ConsecutiveCrashesCount(const base::FilePath& database);
 #endif
 
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || DOXYGEN
+  //! \brief Enable the use of a GUID override.
+  //!
+  //! This function must be called prior to `StartHandler()`
+  //!
+  //! \param[in] uuid The GUID to use as the GUID.
+  //!
+  //! \return `true` on success. Otherwise `false` with a message logged.
+  bool OverrideGuid(const std::string& uuid);
+  bool OverrideGuid(const UUID& uuid);
+#endif // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || DOXYGEN
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
     DOXYGEN
   //! \brief Retrieve the socket and process ID for the handler.
@@ -845,6 +857,10 @@ class CrashpadClient {
   UUID run_uuid_;
   std::set<int> unhandled_signals_;
 #endif  // BUILDFLAG(IS_APPLE)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
+  bool uuid_override_enabled_ = false;
+  UUID uuid_override_;
+#endif // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
 };
 
 }  // namespace crashpad

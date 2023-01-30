@@ -53,7 +53,11 @@ startCrashHandler(std::string const& url, std::string const& handler_path,
     /* Enable automated uploads. */
     database->GetSettings()->SetUploadsEnabled(true);
 
-    return CrashpadClient{}.StartHandler(
+    CrashpadClient client{};
+
+    client.OverrideGuid("11111111-2222-3333-4444-555555555555");
+
+    return client.StartHandler(
         handler, db, db, url, annotations, arguments, false, false, {}
     );
 }

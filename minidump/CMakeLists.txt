@@ -54,7 +54,24 @@ set(CRASHPAD_MINIDUMP_LIBRARY_FILES
     ./minidump_writer_util.h
 )
 
+if (WIN32 AND STATIC_RUNTIME)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:MinSizeRel>:/MT>
+        $<$<CONFIG:Release>:/MT>
+        $<$<CONFIG:RelWithDebInfo>:/MT>
+    )
+    add_compile_definitions(
+        $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
+    )
+endif (WIN32 AND STATIC_RUNTIME)
+
 add_library(minidump OBJECT ${CRASHPAD_MINIDUMP_LIBRARY_FILES})
+
+if (WIN32 AND STATIC_RUNTIME)
+    set_target_properties(minidump PROPERTIES STATIC_LIBRARY_OPTIONS "/NODEFAULTLIB;")
+endif (WIN32 AND STATIC_RUNTIME)
+
 target_compile_features(minidump PUBLIC cxx_std_14)
 target_include_directories(minidump PRIVATE ..)
 target_link_libraries(minidump PUBLIC mini_chromium compat)

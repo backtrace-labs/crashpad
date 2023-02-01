@@ -7,6 +7,7 @@ endif()
 
 if (WIN32)
     enable_language(ASM_MASM)
+    option(STATIC_RUNTIME "Enable linking against the static MSVC runtime library" OFF)
 else ()
     enable_language(ASM)
 endif ()

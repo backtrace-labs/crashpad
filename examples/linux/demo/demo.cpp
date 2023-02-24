@@ -21,7 +21,6 @@ startCrashHandler(std::string const& url, std::string const& handler_path,
 
     std::map<std::string, std::string> annotations;
     std::vector<std::string> arguments;
-    bool rc;
 
     /*
      * THE FOLLOWING ANNOTATIONS MUST BE SET.

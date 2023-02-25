@@ -51,8 +51,8 @@ def gather_include_files dir = include_dir
         selected_headers = all_headers
             .reject{ _1 =~ /^#{Regexp.union REJECT_DIRS}/ }
             .map{ [ "include/#{_1}", File.absolute_path(_1) ] }
-        
-        
+
+
         selected_headers += Dir.chdir 'third_party/mini_chromium/mini_chromium' do
             Dir['**/*.h']
                 .map{ [ "include/#{_1}", File.absolute_path(_1) ] }
@@ -82,9 +82,11 @@ def gather_binaries dir = binary_dir
         [ 'client/libclient.a', 'bin/libclient.a' ],
         [ 'handler/handler', 'bin/handler' ],
         [ './client/Debug/client.lib', 'bin/client.lib' ],
-        [ 'handler\Debug\handler.exe', 'bin/handler.exe' ],
+        [ 'handler/Debug/handler.exe', 'bin/handler.exe' ],
         [ './client/Release/client.lib', 'bin/client.lib' ],
-        [ 'handler\Release\handler.exe', 'bin/handler.exe' ],
+        [ 'handler/Release/handler.exe', 'bin/handler.exe' ],
+        [ './client/client.lib', 'bin/client.lib' ],
+        [ 'handler/handler.exe', 'bin/handler.exe' ],
     ]
     Dir.chdir dir do
         files.each do |file, name|

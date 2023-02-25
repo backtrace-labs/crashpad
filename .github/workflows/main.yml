@@ -16,6 +16,12 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        generator: ["Unix Makefiles", Ninja]
+
     steps:
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
@@ -30,7 +36,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "${{ matrix.generator }}"
           cmake --build cbuild/
           
       - uses: ruby/setup-ruby@v1
@@ -56,6 +62,12 @@ jobs:
   build-windows:
     # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner
     runs-on: windows-2019
+
+    strategy:
+      fail-fast: false
+      matrix:
+        generator: ["Visual Studio 16 2019", Ninja]
+
     steps:
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
@@ -64,6 +76,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Add cl.exe to PATH
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
       - name: CMake
         run: |
           # make a build directory (note: build is already used by Crashpad)
@@ -71,7 +88,7 @@ jobs:
 
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "Visual Studio 16 2019"
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "${{ matrix.generator }}" -DCMAKE_CXX_COMPILER=cl.exe -DCMAKE_C_COMPILER=cl.exe
           cmake --build cbuild/
 
       - uses: ruby/setup-ruby@v1
@@ -101,6 +118,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [arm64, x86_64]
+        generator: ["Unix Makefiles", Ninja]
 
     steps:
       # Install latest CMake.
@@ -113,7 +131,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -G "${{ matrix.generator }}"
           cmake --build cbuild/
 
       - uses: ruby/setup-ruby@v1

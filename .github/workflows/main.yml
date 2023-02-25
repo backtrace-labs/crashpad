@@ -32,7 +32,7 @@ jobs:
           mkdir cbuild
           cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G Ninja
           cmake --build cbuild/
-          
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
@@ -104,6 +104,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      # Ensure we load the correct environment and compiler is available in $PATH
+      - uses: ilammy/msvc-dev-cmd@v1
 
       - name: CMake
         run: |

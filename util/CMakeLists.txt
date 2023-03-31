@@ -393,6 +393,12 @@ if (LINUX AND NOT ANDROID)
 endif (LINUX AND NOT ANDROID)
 
 if (ANDROID)
+    target_compile_definitions(util PUBLIC CRASHPAD_FLOCK_ALWAYS_SUPPORTED=0)
+else ()
+    target_compile_definitions(util PUBLIC CRASHPAD_FLOCK_ALWAYS_SUPPORTED=1)
+endif ()
+
+if (ANDROID)
     if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
         target_link_libraries(util PUBLIC openssl-android-binary)
         target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)

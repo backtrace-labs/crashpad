@@ -142,7 +142,7 @@ class CrashpadClient {
   //! This function must be called prior to `StartHandler()`
   //!
   //! \return `true` on success. Otherwise `false` with a message logged.
-  bool EnableCrashLoopDetection();
+  bool EnableCrashHistory();
 
   //! \brief Detects if safe mode should be enabled
   //!
@@ -853,7 +853,7 @@ class CrashpadClient {
   std::wstring ipc_pipe_;
   ScopedKernelHANDLE handler_start_thread_;
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
-  bool crash_loop_detection_ = false;
+  bool crash_history_ = false;
   UUID run_uuid_;
   std::set<int> unhandled_signals_;
 #endif  // BUILDFLAG(IS_APPLE)

@@ -36,7 +36,7 @@
 #include "build/buildflag.h"
 #include "client/client_argv_handling.h"
 #include "third_party/lss/lss.h"
-#include "util/backtrace/crash_loop_detection.h"
+#include "util/backtrace/crash_history.h"
 #include "util/file/file_io.h"
 #include "util/file/filesystem.h"
 #include "util/linux/exception_handler_client.h"
@@ -471,9 +471,9 @@ bool CrashpadClient::StartHandler(
   argv.push_back(FormatArgumentInt("initial-client-fd", handler_sock.get()));
   argv.push_back("--shared-client-connection");
 
-  if (crash_loop_detection_) {
-    namespace clc = backtrace::crash_loop_detection;
-    DCHECK(clc::CrashLoopDetectionAppend(database, run_uuid_));
+  if (crash_history_) {
+    namespace ch = backtrace::crash_history;
+    DCHECK(ch::Append(database, run_uuid_));
     argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
   }
 
@@ -498,10 +498,10 @@ bool CrashpadClient::StartHandler(
 }
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || DOXYGEN
-bool CrashpadClient::EnableCrashLoopDetection()
+bool CrashpadClient::EnableCrashHistory()
 {
-  crash_loop_detection_ = run_uuid_.InitializeWithNew();
-  return crash_loop_detection_;
+  crash_history_ = run_uuid_.InitializeWithNew();
+  return crash_history_;
 }
 
 bool CrashpadClient::IsSafeModeRequired(const base::FilePath& database)
@@ -511,7 +511,7 @@ bool CrashpadClient::IsSafeModeRequired(const base::FilePath& database)
 
 int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
 {
-  namespace clc = backtrace::crash_loop_detection;
+  namespace clc = backtrace::crash_history;
   return clc::ConsecutiveCrashesCount(database);
 }
 #endif
@@ -741,9 +741,9 @@ bool CrashpadClient::StartHandlerAtCrash(
   backtrace::android_cert_store::create(database);
 #endif
 
-  if (crash_loop_detection_) {
-    namespace clc = backtrace::crash_loop_detection;
-    bool ok = clc::CrashLoopDetectionAppend(database, run_uuid_);
+  if (crash_history_) {
+    namespace ch = backtrace::crash_history;
+    bool ok = ch::Append(database, run_uuid_);
     DCHECK(ok);
     argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
   }

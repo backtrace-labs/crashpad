@@ -1,18 +1,17 @@
-# Linux demo app for crash loop detection
+# Linux demo app for Crash History
 
 This demo app immediately crashes and sends report to the Backtrace universe
-selected by the user. This demo enables Backtrace's Safe Mode/crash loop
-detection feature.
+selected by the user. This demo enables Backtrace's Crash History feature.
 
 # Build instructions
 
 Assumptions:
 - crashpad is checked out to `~/crashpad`
-- the demo app has been copied to `~/crash_loop_detection`
+- the demo app has been copied to `~/crash_history`
 
 1. Update your handler path:
 ```cpp
-std::string handler_path("/home/myusername/crash_loop_detection/build/crashpad/handler/handler");
+std::string handler_path("/home/myusername/crash_history/build/crashpad/handler/handler");
 ```
 2. Update your upload URL
 ```cpp

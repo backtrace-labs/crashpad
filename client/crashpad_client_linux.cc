@@ -511,8 +511,8 @@ bool CrashpadClient::IsSafeModeRequired(const base::FilePath& database)
 
 int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
 {
-  namespace clc = backtrace::crash_history;
-  return clc::ConsecutiveCrashesCount(database);
+  namespace ch = backtrace::crash_history;
+  return ch::ConsecutiveCrashesCount(database);
 }
 #endif
 

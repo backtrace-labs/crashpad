@@ -68,6 +68,13 @@ if (ANDROID)
     target_include_directories(compat_incl INTERFACE android)
 endif (ANDROID)
 
+if (IOS)
+    # target_include_directories(compat_incl INTERFACE ios)
+    target_include_directories(compat_incl INTERFACE non_win)
+    message (STATUS "IOS: ${CMAKE_CURRENT_LIST_DIR}/ios")
+    target_include_directories(compat_incl INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ios")
+endif (IOS)
+
 if (WIN32)
     target_include_directories(compat_incl INTERFACE win)
 else ()

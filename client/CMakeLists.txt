@@ -21,10 +21,19 @@ set(CRASHPAD_CLIENT_LIBRARY_FILES
 if (APPLE)
     list(APPEND CRASHPAD_CLIENT_LIBRARY_FILES
         crash_report_database_mac.mm
-        crashpad_client_mac.cc
-        simulate_crash_mac.cc
-        simulate_crash_mac.h
     )
+    if (IOS)
+        list(APPEND CRASHPAD_CLIENT_LIBRARY_FILES
+            crashpad_client_ios.cc
+        )
+    endif (IOS)
+    if (NOT IOS)
+        list(APPEND CRASHPAD_CLIENT_LIBRARY_FILES
+            crashpad_client_mac.cc
+            simulate_crash_mac.cc
+            simulate_crash_mac.h
+        )
+    endif (NOT IOS)
 endif (APPLE)
 
 if (LINUX)

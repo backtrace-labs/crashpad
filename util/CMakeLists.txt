@@ -121,21 +121,10 @@ set(CRASHPAD_UTIL_LIBRARY_FILES
 if (APPLE)
     list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
         ./mac/checked_mach_address_range.h
-        ./mac/launchd.h
-        ./mac/mac_util.cc
-        ./mac/mac_util.h
-        ./mac/service_management.cc
-        ./mac/service_management.h
         ./mac/sysctl.cc
         ./mac/sysctl.h
         ./mac/xattr.cc
         ./mac/xattr.h
-        ./mach/bootstrap.cc
-        ./mach/bootstrap.h
-        ./mach/child_port_handshake.cc
-        ./mach/child_port_handshake.h
-        ./mach/child_port_server.cc
-        ./mach/child_port_server.h
         ./mach/composite_mach_message_server.cc
         ./mach/composite_mach_message_server.h
         ./mach/exc_client_variants.cc
@@ -146,16 +135,12 @@ if (APPLE)
         ./mach/exception_behaviors.h
         ./mach/exception_ports.cc
         ./mach/exception_ports.h
-        ./mach/exception_types.cc
-        ./mach/exception_types.h
         ./mach/mach_extensions.cc
         ./mach/mach_extensions.h
         ./mach/mach_message_server.cc
         ./mach/mach_message_server.h
         ./mach/mach_message.cc
         ./mach/mach_message.h
-        ./mach/notify_server.cc
-        ./mach/notify_server.h
         ./mach/scoped_task_suspend.cc
         ./mach/scoped_task_suspend.h
         ./mach/symbolic_constants_mach.cc
@@ -164,10 +149,33 @@ if (APPLE)
         ./misc/paths_mac.cc
         ./net/http_transport_mac.mm
         ./posix/process_info_mac.cc
-        ./process/process_memory_mac.cc
-        ./process/process_memory_mac.h
         ./synchronization/semaphore_mac.cc
     )
+
+    if (IOS)
+    endif (IOS)
+
+    if (NOT IOS)
+        list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
+            ./mac/launchd.h
+            ./mac/mac_util.cc
+            ./mac/mac_util.h
+            ./mac/service_management.cc
+            ./mac/service_management.h
+            ./mach/bootstrap.cc
+            ./mach/bootstrap.h
+            ./mach/child_port_handshake.cc
+            ./mach/child_port_handshake.h
+            ./mach/child_port_server.cc
+            ./mach/child_port_server.h
+            ./mach/exception_types.cc
+            ./mach/exception_types.h
+            ./mach/notify_server.cc
+            ./mach/notify_server.h
+            ./process/process_memory_mac.cc
+            ./process/process_memory_mac.h
+        )
+    endif (NOT IOS)
 endif (APPLE)
 
 if (UNIX)
@@ -349,8 +357,35 @@ add_library(util OBJECT ${CRASHPAD_UTIL_LIBRARY_FILES})
 target_compile_features(util PUBLIC cxx_std_17)
 
 if (APPLE)
-    set(DEF_FILES "exc.defs" "mach_exc.defs" "notify.defs")
-    set(CHILD_PORT_DEFS "${CMAKE_CURRENT_LIST_DIR}/mach/child_port.defs")
+    if (IOS)
+        set(DEF_FILES "")
+        set(CHILD_PORT_DEFS
+            "${CMAKE_CURRENT_LIST_DIR}/../third_party/xnu/osfmk/mach/exc.defs"
+            "${CMAKE_CURRENT_LIST_DIR}/../third_party/xnu/osfmk/mach/mach_exc.defs"
+        )
+    else ()
+        set(DEF_FILES "exc.defs" "mach_exc.defs" "notify.defs")
+        set(CHILD_PORT_DEFS "${CMAKE_CURRENT_LIST_DIR}/mach/child_port.defs")
+    endif ()
+
+    # if(CMAKE_OSX_SYSROOT)
+        set(OPT_SDK "--sdk ${CMAKE_OSX_SYSROOT}")
+    # endif()
+
+    if(XCODE)
+        # set(archs --arch "FROM_ENV")
+        # message (STATUS "Using archs: ${archs}")
+        set(OPT_SDK [=[--sdk="$SDKROOT"]=])
+        message (STATUS "Using SDKROOT: ${OPT_SDK}")
+    endif()
+
+    list(APPEND OPT_INCLUDES
+        "--include=${CMAKE_CURRENT_SOURCE_DIR}/.."
+        "--include=${CMAKE_CURRENT_SOURCE_DIR}/../compat/mac"
+    )
+    if (IOS)
+        list(APPEND OPT_INCLUDES "--include=${CMAKE_CURRENT_LIST_DIR}/../compat/ios")
+    endif (IOS)
 
     foreach (ONE_DEF_FILE ${DEF_FILES})
         set(ABSOLUTE_PATH_DEF "${CMAKE_OSX_SYSROOT}/usr/include/mach/${ONE_DEF_FILE}")
@@ -376,15 +411,16 @@ if (APPLE)
             set(MIG_ARCH "arm64")
         endif()
 
+        message(STATUS "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/mach/mig.py"
+        "--arch" ${MIG_ARCH} ${OPT_SDK} ${OPT_INCLUDES}
+        ${CPD} ${OUTPUT_FILES})
+
         add_custom_command(
             OUTPUT
                 ${OUTPUT_FILES}
             COMMAND
                 "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/mach/mig.py"
-                    "--arch" ${MIG_ARCH}
-                    "--sdk" ${CMAKE_OSX_SYSROOT}
-                    "--include=${CMAKE_CURRENT_SOURCE_DIR}/.."
-                    "--include=${CMAKE_CURRENT_SOURCE_DIR}/../compat/mac"
+                    "--arch" ${MIG_ARCH} ${OPT_SDK} ${OPT_INCLUDES}
                     ${CPD} ${OUTPUT_FILES}
             DEPENDS
                 "${CMAKE_CURRENT_SOURCE_DIR}/mach/mig.py" "${CPD}"
@@ -394,7 +430,6 @@ if (APPLE)
     target_include_directories(util PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/")
     target_link_libraries(util PUBLIC bsm)
 endif (APPLE)
-
 
 if (CRASHPAD_HTTPS_TRANSPORT STREQUAL "OPENSSL")
     if (NOT ANDROID)

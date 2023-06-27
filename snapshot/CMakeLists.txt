@@ -63,33 +63,40 @@ if (APPLE)
     list (APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
         ./mac/cpu_context_mac.cc
         ./mac/cpu_context_mac.h
-        ./mac/exception_snapshot_mac.cc
-        ./mac/exception_snapshot_mac.h
-        ./mac/mach_o_image_annotations_reader.cc
-        ./mac/mach_o_image_annotations_reader.h
-        ./mac/mach_o_image_reader.cc
-        ./mac/mach_o_image_reader.h
-        ./mac/mach_o_image_segment_reader.cc
-        ./mac/mach_o_image_segment_reader.h
-        ./mac/mach_o_image_symbol_table_reader.cc
-        ./mac/mach_o_image_symbol_table_reader.h
-        ./mac/module_snapshot_mac.cc
-        ./mac/module_snapshot_mac.h
-        ./mac/process_reader_mac.cc
-        ./mac/process_reader_mac.h
-        ./mac/process_snapshot_mac.cc
-        ./mac/process_snapshot_mac.h
-        ./mac/process_types.cc
-        ./mac/process_types.h
-        ./mac/process_types/custom.cc
-        ./mac/process_types/flavors.h
-        ./mac/process_types/internal.h
-        ./mac/process_types/traits.h
-        ./mac/system_snapshot_mac.cc
-        ./mac/system_snapshot_mac.h
-        ./mac/thread_snapshot_mac.cc
-        ./mac/thread_snapshot_mac.h
     )
+    if (NOT IOS)
+        list (APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+            ./mac/exception_snapshot_mac.cc
+            ./mac/exception_snapshot_mac.h
+            ./mac/mach_o_image_annotations_reader.cc
+            ./mac/mach_o_image_annotations_reader.h
+            ./mac/mach_o_image_reader.cc
+            ./mac/mach_o_image_reader.h
+            ./mac/mach_o_image_segment_reader.cc
+            ./mac/mach_o_image_segment_reader.h
+            ./mac/mach_o_image_symbol_table_reader.cc
+            ./mac/mach_o_image_symbol_table_reader.h
+            ./mac/module_snapshot_mac.cc
+            ./mac/module_snapshot_mac.h
+            ./mac/system_snapshot_mac.cc
+            ./mac/system_snapshot_mac.h
+            ./mac/thread_snapshot_mac.cc
+            ./mac/thread_snapshot_mac.h
+            ./mac/process_reader_mac.cc
+            ./mac/process_reader_mac.h
+            ./mac/process_snapshot_mac.cc
+            ./mac/process_snapshot_mac.h
+            ./mac/process_types.cc
+            ./mac/process_types.h
+            ./mac/process_types/custom.cc
+            ./mac/process_types/flavors.h
+            ./mac/process_types/internal.h
+            ./mac/process_types/traits.h
+        )
+    else () # APPLE, IOS
+        list (APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+        )
+    endif ()
 else () # NOT APPLE
     list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
         ./crashpad_types/crashpad_info_reader.cc

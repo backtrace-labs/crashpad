@@ -37,6 +37,15 @@ if (ANDROID)
     )
 endif(ANDROID)
 
+if (LINUX)
+    list(APPEND CRASHPAD_COMPAT_LIBRARY_FILES
+        ./linux/sys/mman_memfd_create.cc
+        ./linux/sys/mman.h
+        ./linux/sys/ptrace.h
+        ./linux/sys/user.h
+    )   
+endif (LINUX)
+
 if (WIN32)
     list(APPEND CRASHPAD_COMPAT_LIBRARY_FILES
         ./win/getopt.h

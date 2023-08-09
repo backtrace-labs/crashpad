@@ -421,6 +421,7 @@ target_include_directories(util PUBLIC ..)
 target_link_libraries(util PUBLIC mini_chromium ZLIB::ZLIB backtrace_common)
 
 if (LINUX AND NOT ANDROID)
+    target_link_libraries(util PUBLIC compat_incl)
     if (OPENSSL_FOUND)
         target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
         target_link_libraries(util PUBLIC OpenSSL::SSL OpenSSL::Crypto)

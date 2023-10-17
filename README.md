@@ -129,6 +129,8 @@ export GTEST=${NDK}/sources/third_party/googletest
 export API_VERSION=21
 # other supported are: armeabi-v7a, x86_64. x86 (32-bit) is NOT supported
 export ABI=arm64-v8a
+# use OPENSSL or NONE
+export HTTPS_TRANSPORT=OPENSSL
 ```
 
 Build:

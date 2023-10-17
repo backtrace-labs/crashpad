@@ -16,6 +16,12 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        generator: ["Unix Makefiles", Ninja]
+
     steps:
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
@@ -30,9 +36,9 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE
+          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE -G "${{ matrix.generator }}"
           cmake --build cbuild/
-          
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
@@ -47,7 +53,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Linux_build.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_Linux_build_${{ github.sha }}
@@ -56,6 +62,12 @@ jobs:
   build-windows:
     # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner
     runs-on: windows-2019
+
+    strategy:
+      fail-fast: false
+      matrix:
+        generator: ["Visual Studio 16 2019", Ninja]
+
     steps:
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
@@ -64,6 +76,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Add cl.exe to PATH
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
       - name: CMake
         run: |
           # make a build directory (note: build is already used by Crashpad)
@@ -71,7 +88,7 @@ jobs:
 
           # run CMake (additional options like -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE are possible)
           # it is recommended to specify the compiler version used for the build
-          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -G "Visual Studio 16 2019"
+          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE -G "${{ matrix.generator }}" -DCMAKE_CXX_COMPILER=cl.exe -DCMAKE_C_COMPILER=cl.exe
           cmake --build cbuild/
 
       - uses: ruby/setup-ruby@v1
@@ -88,7 +105,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_Windows_build_${{ github.sha }}
@@ -101,6 +118,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [arm64, x86_64]
+        generator: ["Unix Makefiles", Ninja]
 
     steps:
       # Install latest CMake.
@@ -113,7 +131,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DBUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -G "${{ matrix.generator }}"
           cmake --build cbuild/
 
       - uses: ruby/setup-ruby@v1
@@ -132,7 +150,7 @@ jobs:
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build_${{ matrix.arch }}.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.sha }}
@@ -180,13 +198,13 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DANDROID_SSL_MODE=${{ env.SSL_MODE }} -DBUILD_EXAMPLES=TRUE
+          cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DCRASHPAD_HTTPS_TRANSPORT=${{ env.SSL_MODE }} -DCRASHPAD_BUILD_EXAMPLES=TRUE
           cmake --build cbuild/
 
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip
-          
+
       - uses: actions/upload-artifact@v3
         with:
           name: Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}

@@ -55,4 +55,3 @@ target_include_directories(client PUBLIC ..)
 if (LINUX)
     target_link_libraries(client PUBLIC Threads::Threads)
 endif (LINUX)
-

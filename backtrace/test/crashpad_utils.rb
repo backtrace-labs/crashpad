@@ -117,7 +117,11 @@ class Execution
 
     def handler
         if OS.windows?
-            'handler/Debug/handler.exe'
+            [
+                'handler/Debug/handler.exe',
+                'handler/Release/handler.exe',
+                'handler/handler.exe',
+            ].find { |f| File.exist? f }
         else
             'handler/handler'
         end

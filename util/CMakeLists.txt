@@ -230,7 +230,6 @@ if (LINUX)
         ./misc/capture_context_linux.S
         ./misc/paths_linux.cc
         ./misc/time_linux.cc
-        ./net/http_transport_socket.cc
         ./posix/process_info_linux.cc
         ./posix/scoped_mmap.cc
         ./process/process_memory_linux.cc
@@ -309,6 +308,35 @@ if (WIN32)
     endif ()
 endif (WIN32)
 
+if (LINUX)
+    if (NOT DEFINED CRASHPAD_HTTPS_TRANSPORT)
+        if (OPENSSL_FOUND)
+            set(CRASHPAD_HTTPS_TRANSPORT "OPENSSL" CACHE STRING "HTTPS transport to use")
+        else ()
+            set(CRASHPAD_HTTPS_TRANSPORT "CURL" CACHE STRING "HTTPS transport to use")
+        endif ()
+    endif (NOT DEFINED CRASHPAD_HTTPS_TRANSPORT)
+
+    if (CRASHPAD_HTTPS_TRANSPORT STREQUAL "OPENSSL")
+        message (STATUS "Using OpenSSL for HTTPS transport")
+        list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
+            ./net/http_transport_socket.cc
+        )
+    elseif (CRASHPAD_HTTPS_TRANSPORT STREQUAL "CURL")
+        message (STATUS "Using libcurl for HTTPS transport")
+        list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
+            ./net/http_transport_libcurl.cc
+        )
+    elseif (CRASHPAD_HTTPS_TRANSPORT STREQUAL "NONE")
+        message (STATUS "HTTPS transport disabled (HTTP only)")
+        list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
+            ./net/http_transport_socket.cc
+        )
+    else ()
+        message(FATAL_ERROR "Unknown HTTPS transport: ${CRASHPAD_HTTPS_TRANSPORT}")
+    endif ()
+endif (LINUX)
+
 if (ANDROID)
     list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
         ./backtrace/android_cert_store.cc
@@ -367,12 +395,19 @@ if (APPLE)
     target_link_libraries(util PUBLIC bsm)
 endif (APPLE)
 
-if (ANDROID)
-    if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
+
+if (CRASHPAD_HTTPS_TRANSPORT STREQUAL "OPENSSL")
+    if (NOT ANDROID)
+        find_package(OpenSSL REQUIRED)
+        target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
+        target_link_libraries(util PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+    else()
         target_link_libraries(util PUBLIC openssl-android-binary)
-    elseif(ANDROID_SSL_MODE STREQUAL "NONE")
-    endif ()
-endif (ANDROID)
+        target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
+    endif()
+elseif (CRASHPAD_HTTPS_TRANSPORT STREQUAL "CURL")
+    target_link_libraries(util PUBLIC CURL::libcurl)
+endif ()
 
 if (UNIX)
     target_link_libraries(util PUBLIC dl)
@@ -393,12 +428,17 @@ if (LINUX AND NOT ANDROID)
 endif (LINUX AND NOT ANDROID)
 
 if (ANDROID)
-    if (ANDROID_SSL_MODE STREQUAL "OPENSSL")
-        target_link_libraries(util PUBLIC openssl-android-binary)
-        target_compile_definitions(util PUBLIC CRASHPAD_USE_BORINGSSL)
-    elseif(ANDROID_SSL_MODE STREQUAL "NONE")
+    target_compile_definitions(util PUBLIC CRASHPAD_FLOCK_ALWAYS_SUPPORTED=0)
+else ()
+    target_compile_definitions(util PUBLIC CRASHPAD_FLOCK_ALWAYS_SUPPORTED=1)
+endif ()
+
+if (ANDROID)
+    if (CRASHPAD_HTTPS_TRANSPORT STREQUAL "OPENSSL")
+        # handled above
+    elseif(CRASHPAD_HTTPS_TRANSPORT STREQUAL "NONE")
     else()
-        message(FATAL_ERROR "Unknown value for ANDROID_SSL_MODE: ${ANDROID_SSL_MODE}")
+        message(FATAL_ERROR "Unknown value for CRASHPAD_HTTPS_TRANSPORT: ${CRASHPAD_HTTPS_TRANSPORT}")
     endif ()
 endif (ANDROID)
 

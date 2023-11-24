@@ -116,9 +116,26 @@ if (WIN32)
     )
 endif (WIN32)
 
+message(STATUS "Current source dir for mini_chromium: ${CMAKE_CURRENT_SOURCE_DIR}")
+include(GNUInstallDirs)
 add_library(mini_chromium OBJECT ${CRASHPAD_MINI_CHROMIUM_LIBRARY_FILES})
 target_compile_features(mini_chromium PUBLIC cxx_std_14)
-target_include_directories(mini_chromium PUBLIC mini_chromium)
+target_include_directories(mini_chromium PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/crashpad/mini_chromium>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/mac>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/process>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/files>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/logging>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/strings>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/third_party/icu>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/threading>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/memory>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/synchronization>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/debug>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/base/posix>"
+    )
 
 if (APPLE)
     target_link_libraries(mini_chromium PUBLIC
@@ -140,3 +157,23 @@ if (WIN32)
     target_compile_definitions(mini_chromium PUBLIC UNICODE)
     target_compile_definitions(mini_chromium PUBLIC WIN32_LEAN_AND_MEAN)
 endif (WIN32)
+
+# Installation
+
+install(TARGETS mini_chromium
+  EXPORT mini_chromium
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/crashpad/mini_chromium"
+    COMPONENT backtrace_crashpad
+  PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/crashpad/mini_chromium"
+    COMPONENT backtrace_crashpad
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    COMPONENT backtrace_crashpad
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad
+    NAMELINK_COMPONENT backtrace_crashpad
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad)
+install(EXPORT mini_chromium
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  NAMESPACE backtrace::crashpad
+  COMPONENT backtrace_crashpad)

@@ -61,6 +61,8 @@ if (WIN32)
     add_subdirectory(third_party/getopt)
 endif (WIN32)
 
+include(GNUInstallDirs)
+
 add_subdirectory(util)
 add_subdirectory(compat)
 add_subdirectory(snapshot)
@@ -73,3 +75,18 @@ add_subdirectory(tools)
 if (CRASHPAD_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif (CRASHPAD_BUILD_EXAMPLES)
+
+message(STATUS "Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Current bin dir: ${CMAKE_CURRENT_BINARY_DIR}")
+message(STATUS "Current cmake install lib dir: ${CMAKE_INSTALL_LIBDIR}")
+message(STATUS "Current source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "Current install include dir: ${CMAKE_INSTALL_INCLUDEDIR}")
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/BacktraceCrashpadConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/BacktraceCrashpad
+)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/BacktraceCrashpadConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/BacktraceCrashpad
+)

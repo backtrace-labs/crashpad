@@ -391,7 +391,13 @@ if (APPLE)
         )
         target_sources(util PRIVATE ${OUTPUT_FILES})
     endforeach()
-    target_include_directories(util PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/")
+    target_include_directories(util
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/crashpad/util>
+    PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
     target_link_libraries(util PUBLIC bsm)
 endif (APPLE)
 
@@ -416,8 +422,13 @@ endif (UNIX)
 if (WIN32)
     target_link_libraries(util PUBLIC winhttp version compat_incl)
 endif (WIN32)
-
-target_include_directories(util PUBLIC ..)
+    target_include_directories(util
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/crashpad/util>
+    PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
 target_link_libraries(util PUBLIC mini_chromium ZLIB::ZLIB backtrace_common)
 
 if (LINUX AND NOT ANDROID)
@@ -445,3 +456,23 @@ endif (ANDROID)
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     target_compile_options(util PUBLIC -Wno-multichar)
 endif ()
+
+# Installation
+include(GNUInstallDirs)
+install(TARGETS util backtrace_common
+  EXPORT util
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/crashpad/util"
+    COMPONENT backtrace_crashpad
+  PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/crashpad/util"
+    COMPONENT backtrace_crashpad
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    COMPONENT backtrace_crashpad
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad
+    NAMELINK_COMPONENT backtrace_crashpad
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad)
+install(EXPORT util
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  NAMESPACE backtrace::crashpad
+  COMPONENT backtrace_crashpad)

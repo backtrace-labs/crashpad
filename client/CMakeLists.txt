@@ -50,8 +50,30 @@ add_library(client STATIC ${CRASHPAD_CLIENT_LIBRARY_FILES})
 target_compile_features(client PUBLIC cxx_std_14)
 
 target_link_libraries(client PUBLIC mini_chromium util compat)
-target_include_directories(client PUBLIC ..)
+target_include_directories(client PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
 if (LINUX)
     target_link_libraries(client PUBLIC Threads::Threads)
 endif (LINUX)
+
+# Installation
+include(GNUInstallDirs)
+install(TARGETS client
+  EXPORT client
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/backtrace/crashpad/client"
+    COMPONENT backtrace_crashpad
+  PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/backtrace/crashpad/client"
+    COMPONENT backtrace_crashpad
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    COMPONENT backtrace_crashpad
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad
+    NAMELINK_COMPONENT backtrace_crashpad
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad)
+install(EXPORT client
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  NAMESPACE backtrace::crashpad
+  COMPONENT backtrace_crashpad)

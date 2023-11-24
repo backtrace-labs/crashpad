@@ -61,7 +61,9 @@ target_link_libraries(compat PUBLIC util compat_incl)
 
 if (LINUX)
     target_include_directories(compat_incl INTERFACE linux)
-    target_include_directories(compat_incl INTERFACE non_win)
+    target_include_directories(compat_incl INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 endif (LINUX)
 
 if (ANDROID)
@@ -71,6 +73,27 @@ endif (ANDROID)
 if (WIN32)
     target_include_directories(compat_incl INTERFACE win)
 else ()
-    target_include_directories(compat_incl INTERFACE non_win)
+    target_include_directories(compat_incl INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 endif (WIN32)
 
+# Installation
+include(GNUInstallDirs)
+install(TARGETS compat compat_incl
+  EXPORT compat
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/crashpad/compat"
+    COMPONENT backtrace_crashpad
+  PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/crashpad/compat"
+    COMPONENT backtrace_crashpad
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    COMPONENT backtrace_crashpad
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad
+    NAMELINK_COMPONENT backtrace_crashpad
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad)
+install(EXPORT compat
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  NAMESPACE backtrace::crashpad
+  COMPONENT backtrace_crashpad)

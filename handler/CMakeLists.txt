@@ -74,3 +74,23 @@ if (ANDROID)
         )
     endif (CUSTOM_CRASHPAD_HANDLER_DESTINATION)
 endif (ANDROID)
+
+# Installation
+include(GNUInstallDirs)
+install(TARGETS handler
+  EXPORT handler
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/backtrace/handler"
+    COMPONENT backtrace_crashpad
+  PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/backtrace/handler"
+    COMPONENT backtrace_crashpad
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    COMPONENT backtrace_crashpad
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad
+    NAMELINK_COMPONENT backtrace_crashpad
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    COMPONENT backtrace_crashpad)
+install(EXPORT handler
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  NAMESPACE backtrace::crashpad
+  COMPONENT backtrace_crashpad)

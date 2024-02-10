@@ -192,7 +192,7 @@ jobs:
         # available on GitHub Actions host (as of 7/24/22) listed below
         if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
         run: |
-          echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT}
+          echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT}
           #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
 
       - name: CMake

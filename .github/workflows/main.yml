@@ -4,11 +4,11 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the "backtrace" branch
   push:
-    branches: [ "backtrace" ]
+    branches: ["backtrace"]
   pull_request:
-    branches: [ "backtrace" ]
+    branches: ["backtrace"]
   schedule:
-    - cron:  '0 0 * * *'
+    - cron: "0 0 * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           working-directory: ./backtrace/test
           bundler-cache: true
 
@@ -93,7 +93,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           working-directory: ./backtrace/test
           bundler-cache: true
 
@@ -137,7 +137,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           working-directory: ./backtrace/test
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           bundler-cache: true
 
       - name: Run tests
@@ -192,7 +192,7 @@ jobs:
         # available on GitHub Actions host (as of 7/24/22) listed below
         if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
         run: |
-          echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null 2>&1
+          echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT}
           #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
 
       - name: CMake

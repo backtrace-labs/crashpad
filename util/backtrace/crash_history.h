@@ -14,23 +14,35 @@
 
 #pragma once
 
+#include <cstdint>
+#include <optional>
+#include <vector>
+
 #include "base/files/file_path.h"
 #include "util/misc/uuid.h"
 
 namespace crashpad {
 namespace backtrace {
-namespace crash_loop_detection {
+namespace crash_history {
 
-static constexpr int crash_loop_detection_max_entries = 10;
+struct RunEntry
+{
+    UUID uuid;
+    bool crashed;
+    time_t start_time;
+    std::optional<time_t> crash_time;
+};
 
-bool CrashLoopDetectionAppend(const base::FilePath& database,
-                              UUID uuid,
-                              int max_entries = crash_loop_detection_max_entries);
+static constexpr int default_max_entries = 10;
 
-bool CrashLoopDetectionSetCrashed(const base::FilePath& database, UUID uuid);
+bool Append(const base::FilePath& database,
+            UUID uuid,
+            int max_entries = default_max_entries);
+
+bool SetCrashed(const base::FilePath& database, UUID uuid);
 
 int ConsecutiveCrashesCount(const base::FilePath& database);
 
-} // crash_loop_detection
+} // crash_history
 } // backtrace
 } // crashpad

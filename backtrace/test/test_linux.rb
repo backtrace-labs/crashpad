@@ -15,8 +15,8 @@ class TestLinux < Minitest::Test
         assert_equal payload['format'], 'minidump'
     end
 
-    def test_crash_loop_detection
-        exe = 'examples/linux/crash_loop_detection/crash_loop_detection_linux'
+    def test_crash_history
+        exe = 'examples/linux/crash_history/crash_history_linux'
         ce = Crashpad::Execution.new executable: exe
 
         Dir.mktmpdir do |dir|

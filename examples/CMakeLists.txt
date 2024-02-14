@@ -14,5 +14,5 @@ endif (WIN32)
 
 if (LINUX)
     add_subdirectory(linux/demo)
-    add_subdirectory(linux/crash_loop_detection)
+    add_subdirectory(linux/crash_history)
 endif (LINUX)

@@ -54,7 +54,7 @@ startCrashHandler(std::string const& url, std::string const& handler_path,
 
     auto client = CrashpadClient{};
 
-    client.EnableCrashLoopDetection();
+    client.EnableCrashHistory();
 
     std::cout << "Last Runs crashed: " <<
         CrashpadClient::ConsecutiveCrashesCount(db) << "\n";

@@ -666,6 +666,8 @@ bool CrashpadClient::StartJavaHandlerAtCrash(
                                                       annotations,
                                                       arguments,
                                                       kInvalidFileHandle);
+  MaybeAppendCrashLoopDetectionArgs(database, &argv);
+  MaybeAppendUuidOverrideArgs(&argv);
 
   auto signal_handler = LaunchAtCrashHandler::Get();
   return signal_handler->Initialize(&argv, env, &unhandled_signals_);

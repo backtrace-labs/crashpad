@@ -856,10 +856,19 @@ class CrashpadClient {
   bool crash_loop_detection_ = false;
   UUID run_uuid_;
   std::set<int> unhandled_signals_;
+
+  // Append the necessary annotation to the crash handler arguments if crash loop detection is
+  // enabled.
+  void MaybeAppendCrashLoopDetectionArgs(const base::FilePath& database,
+                                         std::vector<std::string> *handler_args);
 #endif  // BUILDFLAG(IS_APPLE)
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
   bool uuid_override_enabled_ = false;
   UUID uuid_override_;
+
+  // Append the necessary annotation to the crash handler arguments if the GUID was overriden
+  // by `OverrideGuid`.
+  void MaybeAppendUuidOverrideArgs(std::vector<std::string> *handler_args);
 #endif // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
 };
 

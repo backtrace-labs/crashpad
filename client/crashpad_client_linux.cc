@@ -471,16 +471,8 @@ bool CrashpadClient::StartHandler(
   argv.push_back(FormatArgumentInt("initial-client-fd", handler_sock.get()));
   argv.push_back("--shared-client-connection");
 
-  if (crash_loop_detection_) {
-    namespace clc = backtrace::crash_loop_detection;
-    DCHECK(clc::CrashLoopDetectionAppend(database, run_uuid_));
-    argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
-  }
-
-  if (uuid_override_enabled_) {
-    argv.push_back("--annotation=_backtrace_internal_guid_override=" +
-                   uuid_override_.ToString());
-  }
+  MaybeAppendCrashLoopDetectionArgs(database, &argv);
+  MaybeAppendUuidOverrideArgs(&argv);
 
   if (!SpawnSubprocess(argv, nullptr, handler_sock.get(), false, nullptr)) {
     return false;
@@ -514,6 +506,17 @@ int CrashpadClient::ConsecutiveCrashesCount(const base::FilePath& database)
   namespace clc = backtrace::crash_loop_detection;
   return clc::ConsecutiveCrashesCount(database);
 }
+
+void CrashpadClient::MaybeAppendCrashLoopDetectionArgs(const base::FilePath& database,
+                                                       std::vector<std::string> *handler_args)
+{
+  if (crash_loop_detection_) {
+    namespace clc = backtrace::crash_loop_detection;
+    bool ok = clc::CrashLoopDetectionAppend(database, run_uuid_);
+    DCHECK(ok);
+    handler_args->push_back("--annotation=run-uuid=" + run_uuid_.ToString());
+  }
+}
 #endif
 
 bool CrashpadClient::OverrideGuid(const std::string& uuid)
@@ -529,6 +532,14 @@ bool CrashpadClient::OverrideGuid(const UUID& uuid)
   uuid_override_enabled_ = true;
   uuid_override_ = uuid;
   return true;
+}
+
+void CrashpadClient::MaybeAppendUuidOverrideArgs(std::vector<std::string> *handler_args)
+{
+  if (uuid_override_enabled_) {
+    handler_args->push_back("--annotation=_backtrace_internal_guid_override=" +
+                   uuid_override_.ToString());
+  }
 }
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
@@ -741,17 +752,8 @@ bool CrashpadClient::StartHandlerAtCrash(
   backtrace::android_cert_store::create(database);
 #endif
 
-  if (crash_loop_detection_) {
-    namespace clc = backtrace::crash_loop_detection;
-    bool ok = clc::CrashLoopDetectionAppend(database, run_uuid_);
-    DCHECK(ok);
-    argv.push_back("--annotation=run-uuid=" + run_uuid_.ToString());
-  }
-
-  if (uuid_override_enabled_) {
-    argv.push_back("--annotation=_backtrace_internal_guid_override=" +
-                   uuid_override_.ToString());
-  }
+  MaybeAppendCrashLoopDetectionArgs(database, &argv);
+  MaybeAppendUuidOverrideArgs(&argv);
 
   auto signal_handler = LaunchAtCrashHandler::Get();
   return signal_handler->Initialize(&argv, nullptr, &unhandled_signals_);

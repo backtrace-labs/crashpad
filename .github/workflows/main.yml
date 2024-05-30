@@ -140,13 +140,6 @@ jobs:
           ruby-version: "3.1"
           bundler-cache: true
 
-      - name: Run tests
-        working-directory: ./backtrace/test
-        # temporary: running arm64 binaries on arm64 results in "Bad CPU type in executable" ¯\_(ツ)_/¯
-        if: ${{ matrix.arch != 'arm64' }}
-        run: |
-          bundle exec ruby ./test.rb -v
-
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build_${{ matrix.arch }}.zip

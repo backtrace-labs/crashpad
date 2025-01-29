@@ -15,7 +15,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
@@ -150,7 +150,7 @@ jobs:
           path: Crashpad_MacOs_build_${{ matrix.arch }}.zip
 
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false

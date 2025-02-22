@@ -122,6 +122,7 @@ if (APPLE)
     list(APPEND CRASHPAD_UTIL_LIBRARY_FILES
         ./mac/checked_mach_address_range.h
         ./mac/launchd.h
+        ./mac/launchd.mm
         ./mac/mac_util.cc
         ./mac/mac_util.h
         ./mac/service_management.cc
@@ -136,6 +137,7 @@ if (APPLE)
         ./mach/child_port_handshake.h
         ./mach/child_port_server.cc
         ./mach/child_port_server.h
+        ./mach/child_port_types.h
         ./mach/composite_mach_message_server.cc
         ./mach/composite_mach_message_server.h
         ./mach/exc_client_variants.cc
@@ -158,8 +160,11 @@ if (APPLE)
         ./mach/notify_server.h
         ./mach/scoped_task_suspend.cc
         ./mach/scoped_task_suspend.h
+        ./mach/task_for_pid.cc
+        ./mach/task_for_pid.h
         ./mach/symbolic_constants_mach.cc
         ./mach/symbolic_constants_mach.h
+        ./misc/capture_context_mac.S
         ./misc/clock_mac.cc
         ./misc/paths_mac.cc
         ./net/http_transport_mac.mm

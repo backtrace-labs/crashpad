@@ -8,7 +8,7 @@ on:
   pull_request:
     branches: ["backtrace"]
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -54,9 +54,9 @@ jobs:
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Linux_build.zip
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: Crashpad_Linux_build_${{ github.sha }}
+          name: Crashpad_Linux_build_${{ matrix.generator }}_${{ github.sha }}
           path: Crashpad_Linux_build.zip
 
   build-windows:
@@ -106,9 +106,9 @@ jobs:
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: Crashpad_Windows_build_${{ github.sha }}
+          name: Crashpad_Windows_build_${{ matrix.generator }}_${{ github.sha }}
           path: Crashpad_Windows_build.zip
 
   build-macos:
@@ -144,9 +144,9 @@ jobs:
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build_${{ matrix.arch }}.zip
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: Crashpad_MacOs_build_${{ matrix.arch }}_${{ github.sha }}
+          name: Crashpad_MacOs_build_${{ matrix.arch }}_${{ matrix.generator }}_${{ github.sha }}
           path: Crashpad_MacOs_build_${{ matrix.arch }}.zip
 
   build-android:
@@ -198,7 +198,7 @@ jobs:
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build_${{ github.sha }}
           path: Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip

@@ -159,11 +159,11 @@ jobs:
         abi: [armeabi-v7a, arm64-v8a, x86_64]
         # 64 bit architectures will always have min API level 21 https://stackoverflow.com/a/56467008
         apiLevel: [21, 33]
-        ndk: [25.1.8937393]
+        ndk: [27.2.12479018]
         include:
           - apiLevel: 16
             abi: armeabi-v7a
-            ndk: 25.1.8937393
+            ndk: 27.2.12479018
 
     steps:
       # Install latest CMake.
@@ -180,13 +180,6 @@ jobs:
       - name: Set env others
         if: ${{ matrix.abi != 'armeabi-v7a' }}
         run: echo "SSL_MODE=OPENSSL" >> $GITHUB_ENV
-
-      - name: Install NDK (optional)
-        # available on GitHub Actions host (as of 7/24/22) listed below
-        if: ${{ matrix.ndk }} != '21.4.7075529' && ${{ matrix.ndk }} != '23.2.8568313' && ${{ matrix.ndk }} != '24.0.8215888'
-        run: |
-          echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "ndk;${{ matrix.ndk }}" --sdk_root=${ANDROID_SDK_ROOT}
-          #ls -lsa $ANDROID_HOME/ndk/${{ matrix.ndk }}/platforms
 
       - name: CMake
         run: |

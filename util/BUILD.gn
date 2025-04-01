@@ -19,7 +19,7 @@ if (crashpad_is_in_chromium) {
   import("//build/config/sanitizers/sanitizers.gni")
 }
 
-if (crashpad_is_mac || crashpad_is_ios) {
+if (crashpad_is_apple) {
   if (crashpad_is_in_chromium || crashpad_is_in_fuchsia) {
     import("//build/config/sysroot.gni")
   } else {
@@ -32,12 +32,6 @@ if (crashpad_is_mac || crashpad_is_ios) {
       "mach/mig_fix.py",
       "mach/mig_gen.py",
     ]
-
-    if (crashpad_is_in_fuchsia) {
-      # TODO(https://fxbug.dev/68780): Remove suppression when fixed.
-      hermetic_deps = false
-      all_outputs_fresh = false
-    }
 
     if (crashpad_is_mac) {
       sources = [
@@ -317,8 +311,10 @@ crashpad_static_library("util") {
     }
   }
 
-  if (crashpad_is_mac || crashpad_is_ios) {
+  if (crashpad_is_apple) {
     sources += [
+      "mac/sysctl.cc",
+      "mac/sysctl.h",
       "mac/xattr.cc",
       "mac/xattr.h",
       "mach/composite_mach_message_server.cc",
@@ -355,8 +351,6 @@ crashpad_static_library("util") {
       "mac/mac_util.h",
       "mac/service_management.cc",
       "mac/service_management.h",
-      "mac/sysctl.cc",
-      "mac/sysctl.h",
       "mach/bootstrap.cc",
       "mach/bootstrap.h",
       "mach/child_port_handshake.cc",
@@ -401,10 +395,10 @@ crashpad_static_library("util") {
       "ios/raw_logging.h",
       "ios/scoped_background_task.h",
       "ios/scoped_background_task.mm",
-      "ios/scoped_vm_read.cc",
-      "ios/scoped_vm_read.h",
       "ios/scoped_vm_map.cc",
       "ios/scoped_vm_map.h",
+      "ios/scoped_vm_read.cc",
+      "ios/scoped_vm_read.h",
     ]
   }
 
@@ -432,6 +426,8 @@ crashpad_static_library("util") {
       "linux/exception_information.h",
       "linux/memory_map.cc",
       "linux/memory_map.h",
+      "linux/pac_helper.cc",
+      "linux/pac_helper.h",
       "linux/proc_stat_reader.cc",
       "linux/proc_stat_reader.h",
       "linux/proc_task_reader.cc",
@@ -532,13 +528,12 @@ crashpad_static_library("util") {
         "win/safe_terminate_process.asm",
       ]
     } else {
-      # Most Crashpad builds use Microsoft's armasm64.exe macro assembler for
-      # .asm source files. When building in Chromium, clang-cl is used as the
-      # assembler instead. Since the two assemblers recognize different
-      # assembly dialects, the same .asm file can't be used for each. As a
-      # workaround, use a prebuilt .obj file when the Microsoft-dialect
-      # assembler isn't available.
-      if (crashpad_is_in_chromium) {
+      # When building with clang, clang-cl is used as the assembler. Since
+      # clang-cl recognizes a different assembly dialect than Microsoft’s
+      # armasm64 macro assembler, the same .asm file can’t be used for each. As
+      # a workaround, use a prebuilt .obj file when the Microsoft-dialect
+      # assembler isn’t available.
+      if (crashpad_is_clang) {
         sources += [ "misc/capture_context_win_arm64.obj" ]
       } else {
         sources += [ "misc/capture_context_win_arm64.asm" ]
@@ -553,11 +548,12 @@ crashpad_static_library("util") {
       "fuchsia/scoped_task_suspend.cc",
       "fuchsia/scoped_task_suspend.h",
       "fuchsia/traits.h",
-      "misc/capture_context_fuchsia.S",
       "misc/paths_fuchsia.cc",
       "process/process_memory_fuchsia.cc",
       "process/process_memory_fuchsia.h",
     ]
+
+    sources -= [ "misc/capture_context.h" ]
   }
 
   public_configs = [ "..:crashpad_config" ]
@@ -576,20 +572,16 @@ crashpad_static_library("util") {
     "../third_party/zlib",
   ]
 
-  deps += [
-    "$mini_chromium_source_parent:base",
-    "$mini_chromium_source_parent:chromeos_buildflags",
-  ]
+  deps = [ "$mini_chromium_source_parent:base" ]
 
   configs = [ "../build:flock_always_supported_defines" ]
 
-  if (crashpad_is_mac || crashpad_is_ios) {
+  if (crashpad_is_apple) {
     include_dirs += [ "$root_gen_dir" ]
-    deps += [ ":mig_output" ]
-  }
-
-  if (crashpad_is_ios) {
-    deps += [ "../build:ios_enable_arc" ]
+    deps += [
+      ":mig_output",
+      "../build:apple_enable_arc",
+    ]
   }
 
   if (crashpad_is_mac && !crashpad_is_in_fuchsia) {
@@ -599,6 +591,10 @@ crashpad_static_library("util") {
       "Foundation.framework",
       "IOKit.framework",
     ]
+  }
+
+  if (crashpad_is_ios) {
+    configs += [ "../build:crashpad_is_ios_app_extension" ]
   }
 
   if (crashpad_is_win) {
@@ -649,6 +645,10 @@ crashpad_static_library("net") {
     ":util",
     "$mini_chromium_source_parent:base",
   ]
+
+  if (crashpad_is_apple) {
+    deps += [ "../build:apple_enable_arc" ]
+  }
 
   if (crashpad_is_mac && !crashpad_is_in_fuchsia) {
     sources += [ "net/http_transport_mac.mm" ]
@@ -726,7 +726,10 @@ if (!crashpad_is_android && !crashpad_is_ios) {
 source_set("no_cfi_icall") {
   sources = [ "misc/no_cfi_icall.h" ]
   public_configs = [ "..:crashpad_config" ]
-  public_deps = [ "$mini_chromium_source_parent:build" ]
+  public_deps = [
+    "$mini_chromium_source_parent:base",
+    "$mini_chromium_source_parent:build",
+  ]
 }
 
 source_set("util_test") {
@@ -802,7 +805,7 @@ source_set("util_test") {
     sources += [ "posix/scoped_mmap_test.cc" ]
   }
 
-  if (crashpad_is_mac || crashpad_is_ios) {
+  if (crashpad_is_apple) {
     sources += [
       "mac/xattr_test.cc",
       "mach/composite_mach_message_server_test.cc",
@@ -838,8 +841,8 @@ source_set("util_test") {
     sources += [
       "ios/ios_intermediate_dump_reader_test.cc",
       "ios/ios_intermediate_dump_writer_test.cc",
-      "ios/scoped_vm_read_test.cc",
       "ios/scoped_vm_map_test.cc",
+      "ios/scoped_vm_read_test.cc",
     ]
 
     sources -= [
@@ -864,7 +867,10 @@ source_set("util_test") {
   }
 
   if (crashpad_is_fuchsia) {
-    sources += [ "misc/capture_context_test_util_fuchsia.cc" ]
+    sources -= [
+      "misc/capture_context_test.cc",
+      "misc/capture_context_test_util.h",
+    ]
   }
 
   if (crashpad_is_win) {
@@ -915,6 +921,10 @@ source_set("util_test") {
     if (crashpad_use_boringssl_for_http_transport_socket) {
       defines = [ "CRASHPAD_USE_BORINGSSL" ]
     }
+  }
+
+  if (crashpad_is_apple) {
+    deps += [ "../build:apple_enable_arc" ]
   }
 
   if (crashpad_is_mac) {

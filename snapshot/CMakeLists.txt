@@ -3,20 +3,14 @@ set(CRASHPAD_SNAPSHOT_LIBRARY_FILES
     ./annotation_snapshot.h
     ./capture_memory.cc
     ./capture_memory.h
-    ./cpu_architecture.h
-    ./cpu_context.cc
-    ./cpu_context.h
     ./crashpad_info_client_options.cc
     ./crashpad_info_client_options.h
-    ./crashpad_types/image_annotation_reader.cc
-    ./crashpad_types/image_annotation_reader.h
     ./exception_snapshot.h
     ./handle_snapshot.cc
     ./handle_snapshot.h
-    ./memory_map_region_snapshot.h
-    ./memory_snapshot_generic.h
     ./memory_snapshot.cc
     ./memory_snapshot.h
+    ./memory_snapshot_generic.h
     ./minidump/exception_snapshot_minidump.cc
     ./minidump/exception_snapshot_minidump.h
     ./minidump/memory_snapshot_minidump.cc
@@ -42,25 +36,25 @@ set(CRASHPAD_SNAPSHOT_LIBRARY_FILES
     ./minidump/thread_snapshot_minidump.h
     ./module_snapshot.h
     ./process_snapshot.h
-    ./sanitized/memory_snapshot_sanitized.cc
-    ./sanitized/memory_snapshot_sanitized.h
-    ./sanitized/module_snapshot_sanitized.cc
-    ./sanitized/module_snapshot_sanitized.h
-    ./sanitized/sanitization_information.cc
-    ./sanitized/sanitization_information.h
-    ./sanitized/thread_snapshot_sanitized.cc
-    ./sanitized/thread_snapshot_sanitized.h
     ./snapshot_constants.h
     ./system_snapshot.h
     ./thread_snapshot.h
     ./unloaded_module_snapshot.cc
     ./unloaded_module_snapshot.h
-    ./x86/cpuid_reader.cc
-    ./x86/cpuid_reader.h
+    ./cpu_architecture.h
+    ./cpu_context.cc
+    ./cpu_context.h
 )
 
+if (UNIX)
+    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+        ./posix/timezone.cc
+        ./posix/timezone.h
+    )
+endif (UNIX)
+
 if (APPLE)
-    list (APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
         ./mac/cpu_context_mac.cc
         ./mac/cpu_context_mac.h
         ./mac/exception_snapshot_mac.cc
@@ -90,32 +84,10 @@ if (APPLE)
         ./mac/thread_snapshot_mac.cc
         ./mac/thread_snapshot_mac.h
     )
-else () # NOT APPLE
-    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
-        ./crashpad_types/crashpad_info_reader.cc
-        ./crashpad_types/crashpad_info_reader.h
-    )
-endif (APPLE)
+endif()
 
-if (UNIX)
+if (LINUX OR ANDROID)
     list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
-        ./posix/timezone.cc
-        ./posix/timezone.h
-        ./sanitized/process_snapshot_sanitized.cc
-        ./sanitized/process_snapshot_sanitized.h
-    )
-endif (UNIX)
-
-if (LINUX)
-    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
-        ./elf/elf_dynamic_array_reader.cc
-        ./elf/elf_dynamic_array_reader.h
-        ./elf/elf_image_reader.cc
-        ./elf/elf_image_reader.h
-        ./elf/elf_symbol_table_reader.cc
-        ./elf/elf_symbol_table_reader.h
-        ./elf/module_snapshot_elf.cc
-        ./elf/module_snapshot_elf.h
         ./linux/capture_memory_delegate_linux.cc
         ./linux/capture_memory_delegate_linux.h
         ./linux/cpu_context_linux.cc
@@ -128,12 +100,45 @@ if (LINUX)
         ./linux/process_reader_linux.h
         ./linux/process_snapshot_linux.cc
         ./linux/process_snapshot_linux.h
+        ./linux/signal_context.h
         ./linux/system_snapshot_linux.cc
         ./linux/system_snapshot_linux.h
         ./linux/thread_snapshot_linux.cc
         ./linux/thread_snapshot_linux.h
-    )
-endif (LINUX)
+        ./sanitized/memory_snapshot_sanitized.cc
+        ./sanitized/memory_snapshot_sanitized.h
+        ./sanitized/module_snapshot_sanitized.cc
+        ./sanitized/module_snapshot_sanitized.h
+        ./sanitized/process_snapshot_sanitized.cc
+        ./sanitized/process_snapshot_sanitized.h
+        ./sanitized/sanitization_information.cc
+        ./sanitized/sanitization_information.h
+        ./sanitized/thread_snapshot_sanitized.cc
+        ./sanitized/thread_snapshot_sanitized.h
+)
+endif()
+
+if (LINUX OR ANDROID OR WIN32)
+    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+        ./crashpad_types/crashpad_info_reader.cc
+        ./crashpad_types/crashpad_info_reader.h
+)
+endif()
+
+if (LINUX OR ANDROID)
+    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+        ./crashpad_types/image_annotation_reader.cc
+        ./crashpad_types/image_annotation_reader.h
+        ./elf/elf_dynamic_array_reader.cc
+        ./elf/elf_dynamic_array_reader.h
+        ./elf/elf_image_reader.cc
+        ./elf/elf_image_reader.h
+        ./elf/elf_symbol_table_reader.cc
+        ./elf/elf_symbol_table_reader.h
+        ./elf/module_snapshot_elf.cc
+        ./elf/module_snapshot_elf.h
+)
+endif()
 
 if (WIN32)
     list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
@@ -165,6 +170,13 @@ if (WIN32)
         ./win/thread_snapshot_win.h
     )
 endif (WIN32)
+
+if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    list(APPEND CRASHPAD_SNAPSHOT_LIBRARY_FILES
+        ./x86/cpuid_reader.cc
+        ./x86/cpuid_reader.h
+    )
+endif()
 
 add_library(snapshot OBJECT ${CRASHPAD_SNAPSHOT_LIBRARY_FILES})
 

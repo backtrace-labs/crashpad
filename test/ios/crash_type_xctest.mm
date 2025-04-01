@@ -14,6 +14,7 @@
 
 #import <XCTest/XCTest.h>
 #include <objc/runtime.h>
+#include <sys/sysctl.h>
 
 #include <vector>
 
@@ -21,12 +22,29 @@
 #include "build/build_config.h"
 #include "client/length_delimited_ring_buffer.h"
 #import "test/ios/host/cptest_shared_object.h"
+#include "util/mac/sysctl.h"
 #include "util/mach/exception_types.h"
 #include "util/mach/mach_extensions.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
+namespace crashpad {
+namespace {
+
+#if TARGET_OS_SIMULATOR
+// macOS 14.0 is 23A344, macOS 13.6.5 is 22G621, so if the first two characters
+// in the kern.osversion are > 22, this build will reproduce the simulator bug
+// in crbug.com/328282286
+bool IsMacOSVersion143OrGreaterAndiOS16OrLess() {
+  if (__builtin_available(iOS 17, *)) {
+    return false;
+  }
+
+  std::string build = crashpad::ReadStringSysctlByName("kern.osversion", false);
+  return std::stoi(build.substr(0, 2)) > 22;
+}
 #endif
+
+}  // namespace
+}  // namespace crashpad
 
 @interface CPTestTestCase : XCTestCase {
   XCUIApplication* app_;
@@ -86,6 +104,12 @@
 
 - (void)setUp {
   app_ = [[XCUIApplication alloc] init];
+  if ([self.name isEqualToString:@"-[CPTestTestCase testExtensionStreams]"]) {
+    app_.launchArguments = @[ @"--test-extension-streams" ];
+  } else if ([self.name isEqualToString:
+                            @"-[CPTestTestCase testCrashWithExtraMemory]"]) {
+    app_.launchArguments = @[ @"--test-extra_memory" ];
+  }
   [app_ launch];
   rootObject_ = [EDOClientService rootObjectWithPort:12345];
   [rootObject_ clearPendingReports];
@@ -152,7 +176,10 @@
   [rootObject_ crashException];
   // After https://reviews.llvm.org/D141222 exceptions call
   // __libcpp_verbose_abort, which Chromium sets to `brk 0` in release.
-#if defined(CRASHPAD_IS_IN_CHROMIUM) && defined(NDEBUG)
+  // After https://crrev.com/c/5375084, Chromium does not set `brk 0` for local
+  // release builds and official DCHECK builds.
+#if defined(CRASHPAD_IS_IN_CHROMIUM) && defined(NDEBUG) && \
+    defined(OFFICIAL_BUILD) && !defined(DCHECK_ALWAYS_ON)
   [self verifyCrashReportException:SIGABRT];
 #else
   [self verifyCrashReportException:EXC_SOFT_SIGNAL];
@@ -321,6 +348,14 @@
 #endif
 
 - (void)testCrashWithAnnotations {
+#if TARGET_OS_SIMULATOR
+  // This test will fail on older (<iOS17 simulators) when running on macOS 14.3
+  // or newer due to a bug in Simulator. crbug.com/328282286
+  if (crashpad::IsMacOSVersion143OrGreaterAndiOS16OrLess()) {
+    return;
+  }
+#endif
+
   [rootObject_ crashWithAnnotations];
   [self verifyCrashReportException:EXC_SOFT_SIGNAL];
   NSNumber* report_exception;
@@ -368,12 +403,47 @@
   XCTAssertFalse(reader.Pop(ringBufferEntry));
 }
 
+- (void)testCrashWithExtraMemory {
+#if TARGET_OS_SIMULATOR
+  // This test will fail on older (<iOS17 simulators) when running on macOS 14.3
+  // or newer due to a bug in Simulator. crbug.com/328282286
+  if (crashpad::IsMacOSVersion143OrGreaterAndiOS16OrLess()) {
+    return;
+  }
+#endif
+
+  [rootObject_ crashKillAbort];
+  [self verifyCrashReportException:EXC_SOFT_SIGNAL];
+
+  NSDictionary* dict = [rootObject_ getExtraMemory];
+  BOOL found = NO;
+  for (NSString* key in dict) {
+    if ([dict[key] isEqualToString:@"hello world"]) {
+      found = YES;
+      break;
+    }
+  }
+  XCTAssertTrue(found);
+}
+
+- (void)testExtensionStreams {
+#if TARGET_OS_SIMULATOR
+  // This test will fail on older (<iOS17 simulators) when running on macOS 14.3
+  // or newer due to a bug in Simulator. crbug.com/328282286
+  if (crashpad::IsMacOSVersion143OrGreaterAndiOS16OrLess()) {
+    return;
+  }
+#endif
+  [rootObject_ crashKillAbort];
+  [self verifyCrashReportException:EXC_SOFT_SIGNAL];
+  XCTAssertTrue([rootObject_ hasExtensionStream]);
+}
+
 - (void)testDumpWithoutCrash {
   [rootObject_ generateDumpWithoutCrash:10 threads:3];
 
   // The app should not crash
   XCTAssertTrue(app_.state == XCUIApplicationStateRunningForeground);
-
   XCTAssertEqual([rootObject_ pendingReportCount], 30);
 }
 

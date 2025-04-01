@@ -40,6 +40,15 @@
 #define PACKED __attribute__((packed))
 #endif  // COMPILER_MSVC
 
+// NOTE(backtrace): g++ does not support the C++ alignas specifier alongside
+// __attribute((packed)), used below, until version 13.1. To maintain support
+// for 11.4.0 use the following.
+#if defined(COMPILER_GCC)
+#define ALIGNAS(byte_alignment) __attribute__((aligned(byte_alignment)))
+#else
+#define ALIGNAS(byte_alignment) alignas(byte_alignment)
+#endif
+
 namespace crashpad {
 
 //! \brief Minidump stream type values for MINIDUMP_DIRECTORY::StreamType. Each
@@ -209,6 +218,9 @@ enum MinidumpCPUArchitecture : uint16_t {
   //!
   //! \deprecated Use #kMinidumpCPUArchitectureARM64 instead.
   kMinidumpCPUArchitectureARM64Breakpad = 0x8003,
+
+  //! \brief Used by Breakpad for 64-bit RISC-V.
+  kMinidumpCPUArchitectureRISCV64Breakpad = 0x8006,
 
   //! \brief Unknown CPU architecture.
   kMinidumpCPUArchitectureUnknown = PROCESSOR_ARCHITECTURE_UNKNOWN,

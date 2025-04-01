@@ -20,6 +20,7 @@
 
 #include <algorithm>
 
+#include "base/check_op.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/notreached.h"
@@ -205,6 +206,8 @@ CPUArchitecture SystemSnapshotLinux::GetCPUArchitecture() const {
 #elif defined(ARCH_CPU_MIPS_FAMILY)
   return process_reader_->Is64Bit() ? kCPUArchitectureMIPS64EL
                                     : kCPUArchitectureMIPSEL;
+#elif defined(ARCH_CPU_RISCV64)
+  return kCPUArchitectureRISCV64;
 #else
 #error port to your architecture
 #endif
@@ -219,6 +222,9 @@ uint32_t SystemSnapshotLinux::CPURevision() const {
   return 0;
 #elif defined(ARCH_CPU_MIPS_FAMILY)
   // Not implementable on MIPS
+  return 0;
+#elif defined(ARCH_CPU_RISCV64)
+  // Not implemented
   return 0;
 #else
 #error port to your architecture
@@ -239,6 +245,9 @@ std::string SystemSnapshotLinux::CPUVendor() const {
   return std::string();
 #elif defined(ARCH_CPU_MIPS_FAMILY)
   // Not implementable on MIPS
+  return std::string();
+#elif defined(ARCH_CPU_RISCV64)
+  // Not implemented
   return std::string();
 #else
 #error port to your architecture
@@ -268,7 +277,6 @@ uint32_t SystemSnapshotLinux::CPUX86Signature() const {
   return cpuid_.Signature();
 #else
   NOTREACHED();
-  return 0;
 #endif
 }
 
@@ -278,7 +286,6 @@ uint64_t SystemSnapshotLinux::CPUX86Features() const {
   return cpuid_.Features();
 #else
   NOTREACHED();
-  return 0;
 #endif
 }
 
@@ -288,7 +295,6 @@ uint64_t SystemSnapshotLinux::CPUX86ExtendedFeatures() const {
   return cpuid_.ExtendedFeatures();
 #else
   NOTREACHED();
-  return 0;
 #endif
 }
 
@@ -298,7 +304,6 @@ uint32_t SystemSnapshotLinux::CPUX86Leaf7Features() const {
   return cpuid_.Leaf7Features();
 #else
   NOTREACHED();
-  return 0;
 #endif
 }
 
@@ -308,7 +313,6 @@ bool SystemSnapshotLinux::CPUX86SupportsDAZ() const {
   return cpuid_.SupportsDAZ();
 #else
   NOTREACHED();
-  return false;
 #endif  // ARCH_CPU_X86_FMAILY
 }
 
@@ -372,6 +376,9 @@ bool SystemSnapshotLinux::NXEnabled() const {
   return false;
 #elif defined(ARCH_CPU_MIPS_FAMILY)
   // Not implementable on MIPS
+  return false;
+#elif defined(ARCH_CPU_RISCV64)
+  // Not implemented
   return false;
 #else
 #error Port.

@@ -131,7 +131,7 @@ jobs:
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -G "${{ matrix.generator }}"
+          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) -G "${{ matrix.generator }}"
           cmake --build cbuild/
 
       - uses: ruby/setup-ruby@v1

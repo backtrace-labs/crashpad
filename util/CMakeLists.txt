@@ -212,6 +212,8 @@ if (LINUX)
         ./linux/exception_handler_protocol.h
         ./linux/memory_map.cc
         ./linux/memory_map.h
+        ./linux/pac_helper.cc
+        ./linux/pac_helper.h
         ./linux/proc_stat_reader.cc
         ./linux/proc_stat_reader.h
         ./linux/proc_task_reader.cc
@@ -450,3 +452,7 @@ endif (ANDROID)
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     target_compile_options(util PUBLIC -Wno-multichar)
 endif ()
+
+if (APPLE)
+    target_compile_options(util PRIVATE -fobjc-arc)
+endif()

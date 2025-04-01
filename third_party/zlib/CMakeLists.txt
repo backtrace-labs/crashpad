@@ -1,50 +1,85 @@
-set(CRASHPAD_ZLIB_LIBRARY_FILES
-    ./zlib_crashpad.h
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
+
+set(VERSION "1.2.13.1")
+
+include(CheckTypeSize)
+include(CheckFunctionExists)
+include(CheckIncludeFile)
+include(CheckCSourceCompiles)
+
+#
+# Check to see if we have large file support
+#
+set(CMAKE_REQUIRED_DEFINITIONS -D_LARGEFILE64_SOURCE=1)
+# We add these other definitions here because CheckTypeSize.cmake
+# in CMake 2.4.x does not automatically do so and we want
+# compatibility with CMake 2.4.x.
+if(HAVE_SYS_TYPES_H)
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_SYS_TYPES_H)
+endif()
+if(HAVE_STDINT_H)
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDINT_H)
+endif()
+if(HAVE_STDDEF_H)
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDDEF_H)
+endif()
+check_type_size(off64_t OFF64_T)
+if(HAVE_OFF64_T)
+   add_definitions(-D_LARGEFILE64_SOURCE=1)
+endif()
+set(CMAKE_REQUIRED_DEFINITIONS) # clear variable
+
+#
+# Check for fseeko
+#
+check_function_exists(fseeko HAVE_FSEEKO)
+if(NOT HAVE_FSEEKO)
+    add_definitions(-DNO_FSEEKO)
+endif()
+
+#
+# Check for unistd.h
+#
+check_include_file(unistd.h Z_HAVE_UNISTD_H)
+
+if(MSVC)
+    set(CMAKE_DEBUG_POSTFIX "d")
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+    add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+set(ZLIB_PUBLIC_HDRS
+    ./zlib/zconf.h
+    ./zlib/zlib.h
+)
+set(ZLIB_PRIVATE_HDRS
+    ./zlib/crc32.h
+    ./zlib/deflate.h
+    ./zlib/gzguts.h
+    ./zlib/inffast.h
+    ./zlib/inffixed.h
+    ./zlib/inflate.h
+    ./zlib/inftrees.h
+    ./zlib/trees.h
+    ./zlib/zutil.h
+)
+set(ZLIB_SRCS
     ./zlib/adler32.c
     ./zlib/compress.c
-    ./zlib/crc_folding.c
     ./zlib/crc32.c
-    ./zlib/crc32.h
     ./zlib/deflate.c
-    ./zlib/deflate.h
-    ./zlib/fill_window_sse.c
     ./zlib/gzclose.c
-    ./zlib/gzguts.h
     ./zlib/gzlib.c
     ./zlib/gzread.c
     ./zlib/gzwrite.c
-    ./zlib/infback.c
-    ./zlib/inffast.c
-    ./zlib/inffast.h
-    ./zlib/inffixed.h
     ./zlib/inflate.c
-    ./zlib/inflate.h
+    ./zlib/infback.c
     ./zlib/inftrees.c
-    ./zlib/inftrees.h
-    ./zlib/names.h
+    ./zlib/inffast.c
     ./zlib/trees.c
-    ./zlib/trees.h
     ./zlib/uncompr.c
-    ./zlib/zconf.h
-    ./zlib/zlib.h
     ./zlib/zutil.c
-    ./zlib/zutil.h
 )
 
-if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86_64)|(AMD64)")
-    list(APPEND CRASHPAD_ZLIB_LIBRARY_FILES
-        ./zlib/x86.c
-    )
-endif ()
-
-add_library(zlib STATIC)
-target_sources(zlib PRIVATE
-    ${CRASHPAD_ZLIB_LIBRARY_FILES}
-)
-target_compile_features(zlib PUBLIC cxx_std_14)
-
-target_compile_definitions(zlib PUBLIC CRASHPAD_ZLIB_SOURCE_EMBEDDED)
-target_compile_definitions(zlib PUBLIC ZLIB_CONST)
-target_compile_definitions(zlib PUBLIC HAVE_STDARG_H)
-
-target_include_directories(zlib PUBLIC .. zlib)
+add_library(zlib STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})

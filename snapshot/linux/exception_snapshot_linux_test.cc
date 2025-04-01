@@ -66,8 +66,9 @@ void InitializeContext(NativeCPUContext* context) {
 
 void ExpectContext(const CPUContext& actual, const NativeCPUContext& expected) {
   EXPECT_EQ(actual.architecture, kCPUArchitectureX86);
-  EXPECT_EQ(actual.x86->eax,
-            bit_cast<uint32_t>(expected.ucontext.uc_mcontext.gregs[REG_EAX]));
+  EXPECT_EQ(
+      actual.x86->eax,
+      base::bit_cast<uint32_t>(expected.ucontext.uc_mcontext.gregs[REG_EAX]));
   for (unsigned int byte_offset = 0; byte_offset < sizeof(actual.x86->fxsave);
        ++byte_offset) {
     SCOPED_TRACE(base::StringPrintf("byte offset = %u\n", byte_offset));
@@ -87,7 +88,7 @@ void InitializeContext(NativeCPUContext* context) {
 void ExpectContext(const CPUContext& actual, const NativeCPUContext& expected) {
   EXPECT_EQ(actual.architecture, kCPUArchitectureX86_64);
   EXPECT_EQ(actual.x86_64->rax,
-            bit_cast<uint64_t>(expected.uc_mcontext.gregs[REG_RAX]));
+            base::bit_cast<uint64_t>(expected.uc_mcontext.gregs[REG_RAX]));
   for (unsigned int byte_offset = 0;
        byte_offset < sizeof(actual.x86_64->fxsave);
        ++byte_offset) {
@@ -295,6 +296,34 @@ void ExpectContext(const CPUContext& actual, const NativeCPUContext& expected) {
                    sizeof(actual.CPU_ARCH_NAME->fpregs)),
             0);
 #undef CPU_ARCH_NAME
+}
+
+#elif defined(ARCH_CPU_RISCV64)
+using NativeCPUContext = ucontext_t;
+
+void InitializeContext(NativeCPUContext* context) {
+  for (size_t reg = 0; reg < std::size(context->uc_mcontext.__gregs); ++reg) {
+    context->uc_mcontext.__gregs[reg] = reg;
+  }
+
+  memset(&context->uc_mcontext.__fpregs,
+         44,
+         sizeof(context->uc_mcontext.__fpregs));
+}
+
+void ExpectContext(const CPUContext& actual, const NativeCPUContext& expected) {
+  EXPECT_EQ(actual.architecture, kCPUArchitectureRISCV64);
+
+  EXPECT_EQ(actual.riscv64->pc, expected.uc_mcontext.__gregs[0]);
+
+  for (size_t reg = 0; reg < std::size(actual.riscv64->regs); ++reg) {
+    EXPECT_EQ(actual.riscv64->regs[reg], expected.uc_mcontext.__gregs[reg + 1]);
+  }
+
+  EXPECT_EQ(memcmp(&actual.riscv64->fpregs,
+                   &expected.uc_mcontext.__fpregs,
+                   sizeof(actual.riscv64->fpregs)),
+            0);
 }
 
 #else

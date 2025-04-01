@@ -47,6 +47,10 @@ endif (WIN32)
 
 add_library(client STATIC ${CRASHPAD_CLIENT_LIBRARY_FILES})
 
+if (APPLE)
+    target_compile_options(client PRIVATE -fobjc-arc)
+endif()
+
 target_compile_features(client PUBLIC cxx_std_14)
 
 target_link_libraries(client PUBLIC mini_chromium util compat)

@@ -60,13 +60,13 @@ jobs:
           path: Crashpad_Linux_build.zip
 
   build-windows:
-    # Because we want to use Visual Studio 16 2019, we need to use the windows-2019 GitHub runner
-    runs-on: windows-2019
+    # Builds with Visual Studio Enterprise 2022
+    runs-on: windows-2022
 
     strategy:
       fail-fast: false
       matrix:
-        generator: ["Visual Studio 16 2019", Ninja]
+        generator: ["Visual Studio 17 2022", Ninja]
 
     steps:
       # Install latest CMake.

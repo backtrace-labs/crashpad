@@ -108,7 +108,7 @@ def create_zip
     files = gather_include_files.merge(gather_binaries)
     zip_file = OPTIONS[:output] % OPTIONS.merge(env_vars)
 
-    Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
+    Zip::File.open(zip_file, create: true) do |zip|
         files.each do
             zip.add _1, _2
         end

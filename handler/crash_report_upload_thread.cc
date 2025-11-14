@@ -237,6 +237,7 @@ void CrashReportUploadThread::ProcessPendingReport(
 
     case CrashReportDatabase::kCannotRequestUpload:
       NOTREACHED();
+      return;
   }
 
   std::string response_body;
@@ -264,6 +265,8 @@ void CrashReportUploadThread::ProcessPendingReport(
             time(nullptr) +
             (1 << upload_report->upload_attempts) * kRetryWorkIntervalSeconds;
       }
+#elif BUILDFLAG(IS_ANDROID)
+      upload_report.reset();
 #else
       upload_report.reset();
 
@@ -398,9 +401,13 @@ bool CrashReportUploadThread::ShouldRateLimitUpload(
       // attempt to upload the report.
       constexpr int kUploadAttemptIntervalSeconds = 60 * 60;  // 1 hour
       if (now - last_upload_attempt_time < kUploadAttemptIntervalSeconds) {
+#if BUILDFLAG(IS_ANDROID)
+        return true;
+#else
         database_->SkipReportUpload(
             report.uuid, Metrics::CrashSkippedReason::kUploadThrottled);
         return true;
+#endif
       }
     } else {
       // The most recent upload attempt purportedly occurred in the future. If
@@ -410,9 +417,13 @@ bool CrashReportUploadThread::ShouldRateLimitUpload(
       // accept it and don’t attempt to upload the report.
       constexpr int kBackwardsClockTolerance = 60 * 60 * 24;  // 1 day
       if (last_upload_attempt_time - now < kBackwardsClockTolerance) {
+#if BUILDFLAG(IS_ANDROID)
+         return true;
+#else
         database_->SkipReportUpload(
             report.uuid, Metrics::CrashSkippedReason::kUnexpectedTime);
         return true;
+#endif
       }
     }
   }

@@ -335,6 +335,12 @@ class LaunchAtCrashHandler : public SignalHandler {
     waitpid(pid, &status, 0);
   }
 
+  void PushArgument(std::string arg)
+  {
+     argv_strings_.push_back(arg);
+     StringVectorToCStringVector(argv_strings_, &argv_);
+  }
+
  private:
   LaunchAtCrashHandler() = default;
 
@@ -845,5 +851,12 @@ void CrashpadClient::SetCrashLoopBefore(uint64_t crash_loop_before_time) {
   request_crash_dump_handler->SetCrashLoopBefore(crash_loop_before_time);
 }
 #endif
+
+void CrashpadClient::AddAttachment(const std::string& attachment) {
+  auto signal_handler = LaunchAtCrashHandler::Get();
+
+  signal_handler->PushArgument(
+    base::StringPrintf("--attachment=%s", attachment.c_str()));
+}
 
 }  // namespace crashpad

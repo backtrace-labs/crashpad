@@ -531,6 +531,14 @@ class CrashpadClient {
   //!
   //! \param[in] unhandled_signals The set of unhandled signals
   void SetUnhandledSignals(const std::set<int>& unhandled_signals);
+
+  //! \brief Add an additional attachment to be submitted along with any crash
+  //! report.
+  //!
+  //! This can be called after initialization of any single use handler. This
+  //! includes |StartJavaHandlerAtCrash|, |StartHandlerWithLinkerAtCrash|, or
+  //! |StartHandlerAtCrash|.
+  void AddAttachment(const std::string& attachment);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) ||
         // BUILDFLAG(IS_CHROMEOS) || DOXYGEN
 

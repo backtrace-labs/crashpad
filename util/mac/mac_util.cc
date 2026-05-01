@@ -34,6 +34,12 @@
 #include "build/build_config.h"
 #include "util/mac/sysctl.h"
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 120000
+    #define IO_MAIN_PORT kIOMainPortDefault
+#else
+    #define IO_MAIN_PORT kIOMasterPortDefault
+#endif
+
 extern "C" {
 // Private CoreFoundation internals. See 10.9.2 CF-855.14/CFPriv.h and
 // CF-855.14/CFUtilities.c. These are marked for weak import because they’re
@@ -312,7 +318,7 @@ bool MacOSVersionComponents(int* major,
 
 void MacModelAndBoard(std::string* model, std::string* board_id) {
   base::mac::ScopedIOObject<io_service_t> platform_expert(
-      IOServiceGetMatchingService(kIOMasterPortDefault,
+      IOServiceGetMatchingService(IO_MAIN_PORT,
                                   IOServiceMatching("IOPlatformExpertDevice")));
   if (platform_expert) {
     model->assign(IORegistryEntryDataPropertyAsString(platform_expert.get(),

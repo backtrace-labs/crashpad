@@ -187,6 +187,14 @@ jobs:
           cmake -S . -B cbuild/ -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/${{ matrix.ndk }}/build/cmake/android.toolchain.cmake -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.apiLevel }} -DANDROID_NATIVE_API_LEVEL=${{ matrix.apiLevel }} -DANDROID_TOOLCHAIN=clang -DCRASHPAD_HTTPS_TRANSPORT=${{ env.SSL_MODE }} -DCRASHPAD_BUILD_EXAMPLES=TRUE
           cmake --build cbuild/
 
+      # save_artifacts.rb installs gems through bundler/inline, which needs a
+      # user-managed Ruby/Bundler. The other platforms get this from
+      # ruby/setup-ruby; the Android job was missing it and broke once the
+      # runner's pre-installed Ruby could no longer install the zip gem.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.1"
+
       - name: Crashpad distribution ZIP
         run: |
           ruby backtrace/save_artifacts.rb --output Crashpad_Android_ndk${{ matrix.ndk }}_apiLevel${{ matrix.apiLevel }}_${{ matrix.abi }}_build.zip

@@ -119,6 +119,10 @@ jobs:
       matrix:
         arch: [arm64, x86_64]
         generator: ["Unix Makefiles", Ninja]
+        include:
+          - arch: "arm64;x86_64"
+            generator: Ninja
+            arch_name: universal
 
     steps:
       # Install latest CMake.
@@ -128,10 +132,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set arch name
+        run: |
+          if [ -z "${{ matrix.arch_name }}" ]; then
+            echo "arch_name=${{ matrix.arch }}" >> $GITHUB_ENV
+          else
+            echo "arch_name=${{ matrix.arch_name }}" >> $GITHUB_ENV
+          fi
+
       - name: CMake
         run: |
           mkdir cbuild
-          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) -G "${{ matrix.generator }}"
+          cmake -S . -B cbuild/ -DCRASHPAD_BUILD_EXAMPLES=TRUE "-DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}" -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) -G "${{ matrix.generator }}"
           cmake --build cbuild/
 
       - uses: ruby/setup-ruby@v1
@@ -142,12 +154,12 @@ jobs:
 
       - name: Crashpad distribution ZIP
         run: |
-          ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build_${{ matrix.arch }}.zip
+          ruby backtrace/save_artifacts.rb --output Crashpad_MacOs_build_${{ env.arch_name }}.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Crashpad_MacOs_build_${{ matrix.arch }}_${{ matrix.generator }}_${{ github.sha }}
-          path: Crashpad_MacOs_build_${{ matrix.arch }}.zip
+          name: Crashpad_MacOs_build_${{ env.arch_name }}_${{ matrix.generator }}_${{ github.sha }}
+          path: Crashpad_MacOs_build_${{ env.arch_name }}.zip
 
   build-android:
     runs-on: ubuntu-22.04

@@ -103,10 +103,6 @@ jobs:
         run: |
           bundle exec ruby ./test.rb -v
 
-      - name: Crashpad distribution ZIP
-        run: |
-          ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
-
       - name: Verify handler debug record
         if: matrix.generator == 'Visual Studio 17 2022'
         shell: pwsh
@@ -136,27 +132,28 @@ jobs:
         if: matrix.generator == 'Visual Studio 17 2022'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force symbols | Out-Null
-          & $env:DUMP_SYMS cbuild/handler/Release/crashpad_handler.pdb --output symbols/crashpad_handler-x86_64.sym
-          Get-Content symbols/crashpad_handler-x86_64.sym -TotalCount 1
+          & $env:DUMP_SYMS cbuild/handler/Release/crashpad_handler.pdb --output cbuild/handler/Release/crashpad_handler.sym
+          Get-Content cbuild/handler/Release/crashpad_handler.sym -TotalCount 1
 
       - name: Verify .sym matches the binary
         if: matrix.generator == 'Visual Studio 17 2022'
         shell: pwsh
         run: |
-          $f = (Get-Content symbols/crashpad_handler-x86_64.sym -TotalCount 1) -split '\s+'
+          $f = (Get-Content cbuild/handler/Release/crashpad_handler.sym -TotalCount 1) -split '\s+'
           if ($f[0] -ne 'MODULE' -or $f[4] -ne 'crashpad_handler.pdb') { throw "unexpected MODULE line: $f" }
           if ($f[3] -ne $env:HANDLER_DEBUG_ID) { throw ".sym debug id $($f[3]) != binary debug id $env:HANDLER_DEBUG_ID" }
-          $stack = (Select-String -Path symbols/crashpad_handler-x86_64.sym -Pattern '^STACK ' -AllMatches).Count
+          $stack = (Select-String -Path cbuild/handler/Release/crashpad_handler.sym -Pattern '^STACK ' -AllMatches).Count
           if ($stack -eq 0) { throw ".sym has no STACK (unwind) records" }
           Write-Host "OK: .sym matches crashpad_handler.exe ($env:HANDLER_DEBUG_ID), $stack unwind records"
+
+      - name: Crashpad distribution ZIP
+        run: |
+          ruby backtrace/save_artifacts.rb --output Crashpad_Windows_build.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: Crashpad_Windows_build_${{ matrix.generator }}
-          path: |
-            Crashpad_Windows_build.zip
-            symbols/*.sym
+          path: Crashpad_Windows_build.zip
 
   build-macos:
     runs-on: macos-latest
@@ -266,9 +263,7 @@ jobs:
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
           mkdir -p release
-          win="artifacts/Crashpad_Windows_build_Visual Studio 17 2022"
-          cp "$win/Crashpad_Windows_build.zip" "release/Crashpad_Windows_x64_${tag}.zip"
-          cp "$win"/symbols/*.sym release/
+          cp "artifacts/Crashpad_Windows_build_Visual Studio 17 2022/Crashpad_Windows_build.zip" "release/Crashpad_Windows_x64_${tag}.zip"
           cp "artifacts/Crashpad_Linux_build_Ninja/Crashpad_Linux_build.zip" "release/Crashpad_Linux_x86_64_${tag}.zip"
           for arch in arm64 x86_64; do
             cp "artifacts/Crashpad_MacOs_build_${arch}_Ninja/Crashpad_MacOs_build_${arch}.zip" "release/Crashpad_macOS_${arch}_${tag}.zip"
@@ -279,8 +274,8 @@ jobs:
           (cd release && sha256sum * > SHA256SUMS.txt)
           ls -la release
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: release/*
-          draft: true
-          generate_release_notes: true
+      - name: Draft the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" release/* --draft --verify-tag --title "Version ${GITHUB_REF_NAME#v}" --notes ""

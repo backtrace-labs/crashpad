@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.12)
 project(backtrace_crashpad LANGUAGES C CXX)
 cmake_policy(SET CMP0077 NEW)
 
+# C and C++ only: ml64 (MASM) rejects /Z7.
+if (MSVC)
+    add_compile_options(
+        "$<$<AND:$<CONFIG:Release>,$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>>:/Z7>")
+    add_link_options(
+        "$<$<CONFIG:Release>:/DEBUG>"
+        "$<$<CONFIG:Release>:/OPT:REF>"
+        "$<$<CONFIG:Release>:/OPT:ICF>")
+endif ()
+
 if (UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()

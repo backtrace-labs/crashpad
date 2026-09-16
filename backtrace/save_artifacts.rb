@@ -90,6 +90,7 @@ def gather_binaries dir = binary_dir
         [ 'handler/Debug/crashpad_handler.pdb', 'bin/crashpad_handler.pdb' ],
         [ 'handler/Release/crashpad_handler.pdb', 'bin/crashpad_handler.pdb' ],
         [ 'handler/crashpad_handler.pdb', 'bin/crashpad_handler.pdb' ],
+        [ 'handler/Release/crashpad_handler.sym', 'bin/crashpad_handler.sym' ],
     ]
     Dir.chdir dir do
         files.each do |file, name|

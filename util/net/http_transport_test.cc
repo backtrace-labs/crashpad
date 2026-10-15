@@ -51,6 +51,10 @@ std::string ToUTF8IfWin(const std::string& x) {
 }
 #endif
 
+void GetHeaderField(const std::string& request,
+                    const std::string& header,
+                    std::string* value);
+
 class HTTPTransportTestFixture : public MultiprocessExec {
  public:
   using RequestValidator = void (*)(HTTPTransportTestFixture*,
@@ -152,6 +156,12 @@ class HTTPTransportTestFixture : public MultiprocessExec {
       ASSERT_GE(bytes_read, 0);
       request.append(buf, bytes_read);
     }
+
+    // Every transport must identify the origin server with a Host header (RFC 9112 section 3.2).
+    // The test server listens on a non-default port and the field-value carries it.
+    std::string host;
+    GetHeaderField(request, "Host", &host);
+    EXPECT_EQ(host, base::StringPrintf("localhost:%d", port));
 
     if (request_validator_)
       request_validator_(this, request);

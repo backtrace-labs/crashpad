@@ -377,18 +377,24 @@ if (APPLE)
             list(APPEND OUTPUT_FILES "${OUTPUT_PATH}/${BASE_NAME}${SUFFIX}")
         endforeach()
 
-        if (${CMAKE_OSX_ARCHITECTURES})
-            set(MIG_ARCH ${CMAKE_OSX_ARCHITECTURES})
+        if(CMAKE_OSX_ARCHITECTURES)
+            set(OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES})
         else()
-            set(MIG_ARCH "arm64")
+            set(OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR})
         endif()
+
+        set(MIG_ARCH)
+        foreach(ARCH ${OSX_ARCHITECTURES})
+            list(APPEND MIG_ARCH "--arch")
+            list(APPEND MIG_ARCH ${ARCH})
+        endforeach()
 
         add_custom_command(
             OUTPUT
                 ${OUTPUT_FILES}
             COMMAND
                 "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/mach/mig.py"
-                    "--arch" ${MIG_ARCH}
+                    ${MIG_ARCH}
                     "--sdk" ${CMAKE_OSX_SYSROOT}
                     "--include=${CMAKE_CURRENT_SOURCE_DIR}/.."
                     "--include=${CMAKE_CURRENT_SOURCE_DIR}/../compat/mac"

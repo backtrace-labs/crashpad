@@ -82,11 +82,15 @@ def gather_binaries dir = binary_dir
         [ 'client/libclient.a', 'bin/libclient.a' ],
         [ 'handler/handler', 'bin/handler' ],
         [ './client/Debug/client.lib', 'bin/client.lib' ],
-        [ 'handler/Debug/handler.exe', 'bin/handler.exe' ],
+        [ 'handler/Debug/crashpad_handler.exe', 'bin/crashpad_handler.exe' ],
         [ './client/Release/client.lib', 'bin/client.lib' ],
-        [ 'handler/Release/handler.exe', 'bin/handler.exe' ],
+        [ 'handler/Release/crashpad_handler.exe', 'bin/crashpad_handler.exe' ],
         [ './client/client.lib', 'bin/client.lib' ],
-        [ 'handler/handler.exe', 'bin/handler.exe' ],
+        [ 'handler/crashpad_handler.exe', 'bin/crashpad_handler.exe' ],
+        [ 'handler/Debug/crashpad_handler.pdb', 'bin/crashpad_handler.pdb' ],
+        [ 'handler/Release/crashpad_handler.pdb', 'bin/crashpad_handler.pdb' ],
+        [ 'handler/crashpad_handler.pdb', 'bin/crashpad_handler.pdb' ],
+        [ 'handler/Release/crashpad_handler.sym', 'bin/crashpad_handler.sym' ],
     ]
     Dir.chdir dir do
         files.each do |file, name|
@@ -108,7 +112,7 @@ def create_zip
     files = gather_include_files.merge(gather_binaries)
     zip_file = OPTIONS[:output] % OPTIONS.merge(env_vars)
 
-    Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
+    Zip::File.open(zip_file, create: true) do |zip|
         files.each do
             zip.add _1, _2
         end

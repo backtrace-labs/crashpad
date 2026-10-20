@@ -365,12 +365,23 @@ base::ScopedFD CreateSocket(const std::string& hostname,
 bool WriteRequest(Stream* stream,
                   const std::string& method,
                   const std::string& resource,
+                  const std::string& host,
                   const HTTPHeaders& headers,
                   HTTPBodyStream* body_stream) {
   std::string request_line = base::StringPrintf(
       "%s %s HTTP/1.0\r\n", method.c_str(), resource.c_str());
   if (!stream->LoggingWrite(request_line.data(), request_line.size()))
     return false;
+
+  // Name-based virtual hosting, load balancers and API gateways route on the Host header even for HTTP/1.0 requests,
+  // and reject requests that lack it before any backend sees them.
+  // Every other HTTPTransport implementation sends it (WinHTTP, NSURLSession and libcurl add it themselves).
+  // A header named exactly "Host" supplied through SetHeader() takes precedence.
+  if (headers.find("Host") == headers.end()) {
+    std::string host_header = base::StringPrintf("Host: %s\r\n", host.c_str());
+    if (!stream->LoggingWrite(host_header.data(), host_header.size()))
+      return false;
+  }
 
   // Write headers, and determine if Content-Length has been specified.
   bool chunked = true;
@@ -500,14 +511,23 @@ bool ReadResponseLine(Stream* stream) {
   static constexpr const char kHttp11[] = "HTTP/1.1 ";
   if (!(StartsWith(response_line, kHttp10, strlen(kHttp10)) ||
         StartsWith(response_line, kHttp11, strlen(kHttp11))) ||
-      response_line.size() < strlen(kHttp10) + 3 ||
+      response_line.size() < strlen(kHttp10) + 4 ||
       response_line.at(strlen(kHttp10) + 3) != ' ') {
+    LOG(ERROR) << "malformed HTTP status line";
     return false;
   }
   unsigned int http_status = 0;
-  return base::StringToUint(response_line.substr(strlen(kHttp10), 3),
-                            &http_status) &&
-         http_status >= 200 && http_status <= 203;
+  if (!base::StringToUint(response_line.substr(strlen(kHttp10), 3),
+                          &http_status)) {
+    LOG(ERROR) << "malformed HTTP status line";
+    return false;
+  }
+  if (http_status < 200 || http_status > 203) {
+    // Match the WinHTTP, NSURLSession and libcurl transports, which log the status instead of failing silently.
+    LOG(ERROR) << base::StringPrintf("HTTP status %u", http_status);
+    return false;
+  }
+  return true;
 }
 
 bool ReadResponseHeaders(Stream* stream, HTTPHeaders* headers) {
@@ -610,8 +630,19 @@ bool HTTPTransportSocket::ExecuteSynchronously(std::string* response_body) {
   std::unique_ptr<Stream> stream(std::make_unique<FdStream>(sock.get()));
 #endif  // CRASHPAD_USE_BORINGSSL
 
-  if (!WriteRequest(
-          stream.get(), method(), resource, headers(), body_stream())) {
+  // The Host field-value is the URI authority.
+  // The port is omitted when it is the scheme's default, the URI normal form (RFC 9110 section 4.2.3).
+  std::string host_header_value = hostname;
+  if ((scheme == "https" && port != "443") ||
+      (scheme == "http" && port != "80")) {
+    host_header_value += ":" + port;
+  }
+  if (!WriteRequest(stream.get(),
+                    method(),
+                    resource,
+                    host_header_value,
+                    headers(),
+                    body_stream())) {
     return false;
   }
 

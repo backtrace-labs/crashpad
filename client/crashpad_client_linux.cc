@@ -321,12 +321,18 @@ class LaunchAtCrashHandler : public SignalHandler {
       return;
     }
     if (pid == 0) {
-      // Unblock all signals: the mask inherited from this signal handler blocks
-      // the crash signal and survives execve(). A Java handler (app_process)
-      // relies on SIGSEGV internally and is killed silently while it's blocked.
-      kernel_sigset_t unblocked;
-      sys_sigemptyset(&unblocked);
-      sys_sigprocmask(SIG_SETMASK, &unblocked, nullptr);
+      // The mask inherited from this signal handler blocks the crash signal
+      // and survives execve(). A Java handler (app_process) relies on SIGSEGV
+      // internally and is killed silently while it's blocked. Unblock only the
+      // crash signals and keep the rest of the inherited mask (e.g. SIGPIPE).
+      kernel_sigset_t mask;
+      if (sys_sigprocmask(SIG_SETMASK, nullptr, &mask) == 0) {
+        for (int sig : {SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGSYS,
+                        SIGTRAP}) {
+          sys_sigdelset(&mask, sig);
+        }
+        sys_sigprocmask(SIG_SETMASK, &mask, nullptr);
+      }
       if (set_envp_) {
         execve(argv_[0],
                const_cast<char* const*>(argv_.data()),
